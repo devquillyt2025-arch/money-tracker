@@ -13,14 +13,19 @@ const ai = new GoogleGenAI({
   httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
 });
 
-if (!getApps().length) {
-  const credential = process.env.FIREBASE_SERVICE_ACCOUNT
-    ? cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
-    : applicationDefault();
-  initializeApp({
-    credential,
-    projectId: process.env.FIREBASE_PROJECT_ID || 'project-434b365c-4216-414c-ab2',
-  });
+let firebaseInitError: string | null = null;
+try {
+  if (!getApps().length) {
+    const credential = process.env.FIREBASE_SERVICE_ACCOUNT
+      ? cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
+      : applicationDefault();
+    initializeApp({
+      credential,
+      projectId: process.env.FIREBASE_PROJECT_ID || 'project-434b365c-4216-414c-ab2',
+    });
+  }
+} catch (e: any) {
+  firebaseInitError = e.message;
 }
 const adminAuth = getAuth();
 
@@ -52,6 +57,7 @@ app.use(express.json());
 app.get("/api/health", async (_req, res) => {
   const status: Record<string, any> = {
     firebase_app: getApps().length > 0,
+    firebase_init_error: firebaseInitError,
     database_url: !!process.env.DATABASE_URL,
     firebase_service_account: !!process.env.FIREBASE_SERVICE_ACCOUNT,
     gemini_api_key: !!process.env.GEMINI_API_KEY,
