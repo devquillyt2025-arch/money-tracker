@@ -1,6 +1,6 @@
 import "dotenv/config";
 import path from "path";
-import app from "./_api/index";
+import app from "./api/index";
 
 (async () => {
   const PORT = 3000;
