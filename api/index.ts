@@ -8,10 +8,15 @@ import { eq } from "drizzle-orm";
 import crypto from "crypto";
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-  httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
-});
+let ai: GoogleGenAI | null = null;
+try {
+  ai = new GoogleGenAI({
+    apiKey: process.env.GEMINI_API_KEY!,
+    httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+  });
+} catch (e: any) {
+  console.error('GoogleGenAI init failed:', e.message);
+}
 
 let firebaseInitError: string | null = null;
 let adminAuth: ReturnType<typeof getAuth> | null = null;
@@ -63,6 +68,7 @@ app.get("/api/health", async (_req, res) => {
   const status: Record<string, any> = {
     firebase_app: getApps().length > 0,
     firebase_init_error: firebaseInitError,
+    ai_initialized: !!ai,
     database_url: !!process.env.DATABASE_URL,
     firebase_service_account: !!process.env.FIREBASE_SERVICE_ACCOUNT,
     gemini_api_key: !!process.env.GEMINI_API_KEY,
@@ -267,6 +273,7 @@ app.delete("/api/accounts/:id", requireAuth, async (req: AuthRequest, res) => {
 // Financial Insights
 app.post("/api/insights", requireAuth, async (req: AuthRequest, res) => {
   try {
+    if (!ai) return res.status(503).json({ error: "AI service not configured." });
     const { prompt } = req.body;
     let response;
     try {
