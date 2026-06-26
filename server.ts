@@ -1,7 +1,7 @@
 import "dotenv/config";
 import express, { Request, Response, NextFunction } from "express";
 import path from "path";
-import { getApps, initializeApp, applicationDefault } from "firebase-admin/app";
+import { getApps, initializeApp, applicationDefault, cert } from "firebase-admin/app";
 import { getAuth, DecodedIdToken } from "firebase-admin/auth";
 import firebaseConfig from "./firebase-applet-config.json" with { type: "json" };
 import { db } from "./src/db";
@@ -20,8 +20,11 @@ const ai = new GoogleGenAI({
 });
 
 if (!getApps().length) {
+  const credential = process.env.FIREBASE_SERVICE_ACCOUNT
+    ? cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
+    : applicationDefault();
   initializeApp({
-    credential: applicationDefault(),
+    credential,
     projectId: firebaseConfig.projectId,
   });
 }
