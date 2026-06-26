@@ -3,7 +3,7 @@
   "buildCommand": "vite build",
   "outputDirectory": "dist",
   "functions": {
-    "api/index.ts": {
+    "api/index.mts": {
       "memory": 1024,
       "maxDuration": 30
     }
