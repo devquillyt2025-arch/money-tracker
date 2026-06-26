@@ -1,4 +1,3 @@
-import "dotenv/config";
 import express, { Request, Response, NextFunction } from "express";
 import { getApps, initializeApp, applicationDefault, cert } from "firebase-admin/app";
 import { getAuth, DecodedIdToken } from "firebase-admin/auth";
