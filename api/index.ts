@@ -48,6 +48,23 @@ const requireAuth = async (req: AuthRequest, res: Response, next: NextFunction) 
 const app = express();
 app.use(express.json());
 
+// Health check — shows which services are configured
+app.get("/api/health", async (_req, res) => {
+  const status: Record<string, any> = {
+    firebase_app: getApps().length > 0,
+    database_url: !!process.env.DATABASE_URL,
+    firebase_service_account: !!process.env.FIREBASE_SERVICE_ACCOUNT,
+    gemini_api_key: !!process.env.GEMINI_API_KEY,
+  };
+  try {
+    await db.select().from(users).limit(1);
+    status.database = 'connected';
+  } catch (e: any) {
+    status.database = e.message;
+  }
+  res.json(status);
+});
+
 // Get all ledger data
 app.get("/api/ledger", requireAuth, async (req: AuthRequest, res) => {
   try {
