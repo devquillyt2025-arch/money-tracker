@@ -14,6 +14,7 @@ const ai = new GoogleGenAI({
 });
 
 let firebaseInitError: string | null = null;
+let adminAuth: ReturnType<typeof getAuth> | null = null;
 try {
   if (!getApps().length) {
     const credential = process.env.FIREBASE_SERVICE_ACCOUNT
@@ -24,16 +25,20 @@ try {
       projectId: process.env.FIREBASE_PROJECT_ID || 'project-434b365c-4216-414c-ab2',
     });
   }
+  adminAuth = getAuth();
 } catch (e: any) {
   firebaseInitError = e.message;
+  console.error('Firebase init failed:', e);
 }
-const adminAuth = getAuth();
 
 export interface AuthRequest extends Request {
   user?: DecodedIdToken;
 }
 
 const requireAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (!adminAuth) {
+    return res.status(500).json({ error: `Firebase not initialized: ${firebaseInitError}` });
+  }
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Unauthorized: Missing token" });
