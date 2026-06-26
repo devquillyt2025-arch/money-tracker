@@ -3,7 +3,6 @@ import express, { Request, Response, NextFunction } from "express";
 import path from "path";
 import { getApps, initializeApp, applicationDefault, cert } from "firebase-admin/app";
 import { getAuth, DecodedIdToken } from "firebase-admin/auth";
-import firebaseConfig from "./firebase-applet-config.json" with { type: "json" };
 import { db } from "./src/db";
 import { entries, bills, goals, holdings, users, debts, accounts, paymentHistory } from "./src/db/schema";
 import { eq } from "drizzle-orm";
@@ -25,7 +24,7 @@ if (!getApps().length) {
     : applicationDefault();
   initializeApp({
     credential,
-    projectId: firebaseConfig.projectId,
+    projectId: process.env.FIREBASE_PROJECT_ID || 'project-434b365c-4216-414c-ab2',
   });
 }
 const adminAuth = getAuth();

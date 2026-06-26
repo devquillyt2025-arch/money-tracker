@@ -144,8 +144,10 @@ export const api = {
       body: JSON.stringify(account),
     });
     if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error || "Failed to create account");
+      const text = await res.text();
+      let message = `Server error ${res.status}`;
+      try { message = JSON.parse(text).error || message; } catch {}
+      throw new Error(message);
     }
     return res.json();
   },
