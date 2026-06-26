@@ -442,7 +442,7 @@ export default function App() {
             onToggleBillPaid={handleToggleBillPaid}
           />
         );
-      case 'expenses':
+      case 'transactions':
         return (
           <ExpensesView
             entries={filteredEntries}

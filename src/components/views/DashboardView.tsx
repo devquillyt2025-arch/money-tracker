@@ -519,7 +519,7 @@ Keep the insight to one concise, direct sentence.`;
           </div>
           
           <button 
-            onClick={() => onNavigateToTab('expenses')}
+            onClick={() => onNavigateToTab('transactions')}
             className="w-full text-center text-[11px] font-sans font-medium text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:text-blue-600 mt-3.5 pt-3 border-t border-gray-100 dark:border-gray-800/50 transition-colors"
           >
             View full history &rarr;

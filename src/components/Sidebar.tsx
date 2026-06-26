@@ -31,7 +31,7 @@ export default function Sidebar({
   const navItems = [
     { id: 'dashboard' as ActiveTab, label: 'Dashboard', icon: LayoutDashboard, section: 'General' },
     { id: 'accounts' as ActiveTab, label: 'Bank Accounts', icon: Landmark, section: 'General' },
-    { id: 'expenses' as ActiveTab, label: 'Expenses', icon: Receipt, section: 'General' },
+    { id: 'transactions' as ActiveTab, label: 'Transactions', icon: Receipt, section: 'General' },
     { id: 'bills' as ActiveTab, label: 'Subscriptions', icon: FileText, section: 'General' },
     { id: 'investments' as ActiveTab, label: 'Investments', icon: TrendingUp, section: 'General' },
     { id: 'debts' as ActiveTab, label: 'Debt & Loans', icon: CreditCard, section: 'General' },
