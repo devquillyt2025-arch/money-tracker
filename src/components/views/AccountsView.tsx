@@ -30,6 +30,7 @@ export default function AccountsView({
   const [formError, setFormError] = useState('');
   const [showClosedAccounts, setShowClosedAccounts] = useState(false);
 
+  const [isSaving, setIsSaving] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [sortBy, setSortBy] = useState<'balance-desc' | 'balance-asc' | 'name-asc' | 'type-asc'>('balance-desc');
   const [filterType, setFilterType] = useState<string>('all');
@@ -135,6 +136,7 @@ export default function AccountsView({
       return;
     }
 
+    setIsSaving(true);
     try {
       if (editingAccountId) {
         await onUpdateAccount(editingAccountId, {
@@ -158,6 +160,8 @@ export default function AccountsView({
       setIsAddOpen(false);
     } catch (e: any) {
       setFormError(e?.message || 'Failed to save account. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -316,7 +320,7 @@ export default function AccountsView({
                   <h3 className="font-sans font-semibold text-gray-900 dark:text-gray-50 text-lg">{account.name}</h3>
                   <div className="flex flex-wrap gap-2 mt-1">
                     <span className="inline-block px-2.5 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs rounded-full font-medium capitalize border border-gray-200 dark:border-gray-700">
-                      {account.accountType || account.type}
+                      {account.type}
                     </span>
                     {account.accountNumber && account.accountNumber.trim().length > 0 && (
                       <span className="inline-block px-2.5 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs rounded-full font-medium border border-gray-200 dark:border-gray-700">
@@ -468,9 +472,10 @@ export default function AccountsView({
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl font-sans font-semibold text-sm hover:bg-blue-700 transition-colors shadow-sm"
+                  disabled={isSaving}
+                  className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl font-sans font-semibold text-sm hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {editingAccountId ? 'Update Account' : 'Save Account'}
+                  {isSaving ? 'Saving...' : editingAccountId ? 'Update Account' : 'Save Account'}
                 </button>
               </div>
             </form>
