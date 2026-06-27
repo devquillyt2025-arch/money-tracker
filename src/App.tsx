@@ -329,13 +329,23 @@ export default function App() {
 
   const handleAddAccount = async (account: Omit<Account, 'id'>) => {
     const newAccount = await api.createAccount(account);
-    setAccounts(prev => [...prev, newAccount]);
+    setAccounts(prev => {
+      const isDef = newAccount.isDefault || newAccount.isPrimary;
+      return [...(isDef ? prev.map(a => ({ ...a, isDefault: false, isPrimary: false })) : prev), newAccount];
+    });
   };
 
   const handleUpdateAccount = async (id: string, updated: Partial<Account>) => {
     try {
       const updatedAccount = await api.updateAccount(id, updated);
-      setAccounts(prev => prev.map(a => a.id === id ? { ...a, ...updatedAccount } : a));
+      setAccounts(prev => {
+        const isDef = updatedAccount.isDefault || updatedAccount.isPrimary;
+        return prev.map(a => {
+          if (a.id === id) return { ...a, ...updatedAccount };
+          if (isDef) return { ...a, isDefault: false, isPrimary: false };
+          return a;
+        });
+      });
     } catch (e) {
       console.error(e);
     }

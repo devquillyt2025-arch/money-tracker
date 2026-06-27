@@ -90,6 +90,12 @@ const accounts = pgTable("accounts", {
   status: varchar("status", { length: 50 }).default("active"),
   currency: text("currency").default("INR"),
   balanceUpdatedAt: timestamp("balance_updated_at").defaultNow(),
+  nickname: text("nickname"),
+  branchName: text("branch_name"),
+  purpose: text("purpose"),
+  isDefault: boolean("is_default").default(false),
+  notes: text("notes"),
+  vaultLink: text("vault_link"),
 });
 
 // ── Database ──────────────────────────────────────────────────────────────────
@@ -309,8 +315,8 @@ app.post("/api/accounts", requireAuth, async (req: AuthRequest, res) => {
   try {
     const uid = req.user!.uid;
     const accountData = { ...req.body };
-    if (accountData.isPrimary) {
-      await db.update(accounts).set({ isPrimary: false }).where(eq(accounts.userId, uid));
+    if (accountData.isPrimary || accountData.isDefault) {
+      await db.update(accounts).set({ isPrimary: false, isDefault: false }).where(eq(accounts.userId, uid));
     }
     const item = await db.insert(accounts).values({ id: crypto.randomUUID(), ...accountData, userId: uid }).returning();
     res.json(item[0]);
@@ -321,8 +327,8 @@ app.put("/api/accounts/:id", requireAuth, async (req: AuthRequest, res) => {
   try {
     const uid = req.user!.uid;
     const accountData = { ...req.body };
-    if (accountData.isPrimary) {
-      await db.update(accounts).set({ isPrimary: false }).where(eq(accounts.userId, uid));
+    if (accountData.isPrimary || accountData.isDefault) {
+      await db.update(accounts).set({ isPrimary: false, isDefault: false }).where(eq(accounts.userId, uid));
     }
     const existing = await db.select().from(accounts).where(eq(accounts.id, req.params.id));
     if (existing.length > 0) {

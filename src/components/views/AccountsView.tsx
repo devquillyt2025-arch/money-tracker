@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Landmark, Wallet, DollarSign, ListFilter, Check } from 'lucide-react';
+import { Plus, Edit2, Trash2, Landmark, Wallet, DollarSign, ListFilter, Check, Star, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Account, Entry } from '../../types';
 
@@ -27,8 +27,15 @@ export default function AccountsView({
   const [formAccountNumber, setFormAccountNumber] = useState('');
   const [formIfscCode, setFormIfscCode] = useState('');
   const [formStatus, setFormStatus] = useState<'active' | 'inactive' | 'closed'>('active');
+  const [formNickname, setFormNickname] = useState('');
+  const [formBranchName, setFormBranchName] = useState('');
+  const [formPurpose, setFormPurpose] = useState('');
+  const [formIsDefault, setFormIsDefault] = useState(false);
+  const [formNotes, setFormNotes] = useState('');
+  const [formVaultLink, setFormVaultLink] = useState('');
   const [formError, setFormError] = useState('');
   const [showClosedAccounts, setShowClosedAccounts] = useState(false);
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
 
   const [isSaving, setIsSaving] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -103,8 +110,15 @@ export default function AccountsView({
     setFormAccountNumber('');
     setFormIfscCode('');
     setFormStatus('active');
+    setFormNickname('');
+    setFormBranchName('');
+    setFormPurpose('');
+    setFormIsDefault(false);
+    setFormNotes('');
+    setFormVaultLink('');
     setFormError('');
     setEditingAccountId(null);
+    setShowMoreOptions(false);
     setIsAddOpen(true);
   };
 
@@ -115,8 +129,15 @@ export default function AccountsView({
     setFormAccountNumber(account.accountNumber || '');
     setFormIfscCode(account.ifscCode || '');
     setFormStatus(account.status || 'active');
+    setFormNickname(account.nickname || '');
+    setFormBranchName(account.branchName || '');
+    setFormPurpose(account.purpose || '');
+    setFormIsDefault(!!(account.isDefault || account.isPrimary));
+    setFormNotes(account.notes || '');
+    setFormVaultLink(account.vaultLink || '');
     setFormError('');
     setEditingAccountId(account.id);
+    setShowMoreOptions(false);
     setIsAddOpen(true);
   };
 
@@ -138,24 +159,26 @@ export default function AccountsView({
 
     setIsSaving(true);
     try {
+      const commonData = {
+        name: formName.trim(),
+        type: formType,
+        balance: Math.round(balance),
+        status: formStatus,
+        accountNumber: formAccountNumber.trim() || undefined,
+        ifscCode: formIfscCode.trim() || undefined,
+        nickname: formNickname.trim() || undefined,
+        branchName: formBranchName.trim() || undefined,
+        purpose: formPurpose.trim() || undefined,
+        isDefault: formIsDefault,
+        isPrimary: formIsDefault,
+        notes: formNotes.trim() || undefined,
+        vaultLink: formVaultLink.trim() || undefined,
+      };
+
       if (editingAccountId) {
-        await onUpdateAccount(editingAccountId, {
-          name: formName.trim(),
-          type: formType,
-          balance: Math.round(balance),
-          status: formStatus,
-          accountNumber: formAccountNumber.trim() || undefined,
-          ifscCode: formIfscCode.trim() || undefined
-        });
+        await onUpdateAccount(editingAccountId, commonData);
       } else {
-        await onAddAccount({
-          name: formName.trim(),
-          type: formType,
-          balance: Math.round(balance),
-          status: formStatus,
-          accountNumber: formAccountNumber.trim() || undefined,
-          ifscCode: formIfscCode.trim() || undefined
-        });
+        await onAddAccount(commonData);
       }
       setIsAddOpen(false);
     } catch (e: any) {
@@ -276,9 +299,12 @@ export default function AccountsView({
           ₹{totalBalance.toLocaleString()}
         </p>
         {netChangeThisMonth !== 0 && (
-          <p className={`font-sans text-xs font-medium mt-2 ${netChangeThisMonth >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-            {netChangeThisMonth > 0 ? '+' : ''}₹{Math.abs(netChangeThisMonth).toLocaleString()} this month
-          </p>
+          <div className="mt-2 flex items-center gap-1.5">
+            <span className="font-sans text-xs text-gray-500 dark:text-gray-400 font-medium">Net Change This Month:</span>
+            <span className={`font-sans text-xs font-semibold ${netChangeThisMonth >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              {netChangeThisMonth > 0 ? '+' : ''}₹{Math.abs(netChangeThisMonth).toLocaleString()}
+            </span>
+          </div>
         )}
         
         {bankSegments.length > 0 && (
@@ -317,20 +343,49 @@ export default function AccountsView({
                   {getAccountIcon(account.type)}
                 </div>
                 <div>
-                  <h3 className="font-sans font-semibold text-gray-900 dark:text-gray-50 text-lg">{account.name}</h3>
-                  <div className="flex flex-wrap gap-2 mt-1">
+                  <h3 className="font-sans font-semibold text-gray-900 dark:text-gray-50 text-lg flex items-center gap-2">
+                    {account.nickname?.trim() ? account.nickname : account.name}
+                    {(account.isDefault || account.isPrimary) && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-[11px] rounded-full font-medium border border-amber-200 dark:border-amber-800">
+                        <Star size={12} className="fill-amber-500 text-amber-500" /> Default
+                      </span>
+                    )}
+                  </h3>
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
                     <span className="inline-block px-2.5 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs rounded-full font-medium capitalize border border-gray-200 dark:border-gray-700">
                       {account.type}
                     </span>
+                    {account.purpose && account.purpose.trim().length > 0 && (
+                      <span className="inline-block px-2.5 py-1 bg-purple-50 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-xs rounded-full font-medium border border-purple-200 dark:border-purple-800">
+                        {account.purpose}
+                      </span>
+                    )}
                     {account.accountNumber && account.accountNumber.trim().length > 0 && (
                       <span className="inline-block px-2.5 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs rounded-full font-medium border border-gray-200 dark:border-gray-700">
                         •••• {account.accountNumber.length > 4 ? account.accountNumber.slice(-4) : account.accountNumber}
                       </span>
                     )}
                   </div>
+                  {account.branchName && account.branchName.trim().length > 0 && (
+                    <p className="font-sans text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                      Branch: {account.branchName}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-1">
+                {account.vaultLink && account.vaultLink.trim().length > 0 && (
+                  <a
+                    href={account.vaultLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-2.5 py-1.5 text-xs font-sans font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-xl transition-colors inline-flex items-center gap-1"
+                    title="Open Netbanking / Vault Link"
+                  >
+                    <span>Open</span>
+                    <span>→</span>
+                  </a>
+                )}
                 <button
                   onClick={() => openEditModal(account)}
                   className="p-2 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-900/20 rounded-xl transition-colors"
@@ -373,8 +428,8 @@ export default function AccountsView({
       {/* Add/Edit Modal */}
       {isAddOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/20 dark:bg-black/40 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6 rounded-2xl shadow-xl">
-            <div className="flex justify-between items-center mb-6">
+          <div className="w-full max-w-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6 rounded-2xl shadow-xl max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center mb-6 shrink-0">
               <h3 className="text-lg font-sans font-semibold text-gray-900 dark:text-gray-50">
                 {editingAccountId ? 'Edit Account' : 'Add New Account'}
               </h3>
@@ -382,87 +437,188 @@ export default function AccountsView({
                 <Plus size={20} className="rotate-45" />
               </button>
             </div>
-            <form onSubmit={handleSaveAccount} className="space-y-5">
-              <div>
-                <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Account Name</label>
-                <input
-                  type="text"
-                  required
-                  value={formName}
-                  onChange={e => setFormName(e.target.value)}
-                  className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl font-sans text-sm text-gray-900 dark:text-gray-50 outline-none transition-all"
-                  placeholder="e.g. Chase Checking"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Type</label>
-                  <select
-                    value={formType}
-                    onChange={e => setFormType(e.target.value)}
-                    className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-50 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-sans font-medium"
-                  >
-                    <option value="checking">Checking</option>
-                    <option value="savings">Savings</option>
-                    <option value="credit">Credit Card</option>
-                    <option value="cash">Cash</option>
-                    <option value="investment">Investment</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Balance (₹)</label>
-                  <input
-                    type="number"
-                    required
-                    value={formBalance}
-                    onChange={e => setFormBalance(e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl font-sans text-sm text-gray-900 dark:text-gray-50 outline-none transition-all"
-                    placeholder="e.g. 5000"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Account Number (Full)</label>
-                  <input
-                    type="text"
-                    value={formAccountNumber}
-                    onChange={e => setFormAccountNumber(e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl font-sans text-sm text-gray-900 dark:text-gray-50 outline-none transition-all"
-                    placeholder="e.g. 123456789012"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">IFSC Code (Optional)</label>
-                  <input
-                    type="text"
-                    value={formIfscCode}
-                    onChange={e => setFormIfscCode(e.target.value.toUpperCase())}
-                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl font-sans text-sm text-gray-900 dark:text-gray-50 outline-none transition-all uppercase placeholder:normal-case"
-                    placeholder="e.g. HDFC0001234"
-                    maxLength={11}
-                  />
-                </div>
-                {editingAccountId && (
-                  <div className="col-span-2">
-                    <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Status</label>
+            <form onSubmit={handleSaveAccount} className="flex flex-col grow overflow-hidden">
+              <div className="flex flex-col gap-5 overflow-y-auto pr-2 pb-2 grow">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Row 1: Bank/Account Name | Nickname (Optional) */}
+                  <div>
+                    <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Bank / Account Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={formName}
+                      onChange={e => setFormName(e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl font-sans text-sm text-gray-900 dark:text-gray-50 outline-none transition-all"
+                      placeholder="e.g. Chase Checking"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Nickname (Optional)</label>
+                    <input
+                      type="text"
+                      value={formNickname}
+                      onChange={e => setFormNickname(e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl font-sans text-sm text-gray-900 dark:text-gray-50 outline-none transition-all"
+                      placeholder="e.g. Salary Account"
+                    />
+                  </div>
+
+                  {/* Row 2: Type | Balance (₹) */}
+                  <div>
+                    <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Type</label>
                     <select
-                      value={formStatus}
-                      onChange={e => setFormStatus(e.target.value as any)}
+                      value={formType}
+                      onChange={e => setFormType(e.target.value)}
                       className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-50 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-sans font-medium"
                     >
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                      <option value="closed">Closed</option>
+                      <option value="checking">Checking</option>
+                      <option value="savings">Savings</option>
+                      <option value="credit">Credit Card</option>
+                      <option value="cash">Cash</option>
+                      <option value="investment">Investment</option>
+                      <option value="other">Other</option>
                     </select>
                   </div>
-                )}
+                  <div>
+                    <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Balance (₹)</label>
+                    <input
+                      type="number"
+                      required
+                      value={formBalance}
+                      onChange={e => setFormBalance(e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl font-sans text-sm text-gray-900 dark:text-gray-50 outline-none transition-all"
+                      placeholder="e.g. 5000"
+                    />
+                  </div>
+
+                  {/* Row 3: Account Number (Full) | IFSC Code (Optional) */}
+                  <div>
+                    <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Account Number (Full)</label>
+                    <input
+                      type="text"
+                      value={formAccountNumber}
+                      onChange={e => setFormAccountNumber(e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl font-sans text-sm text-gray-900 dark:text-gray-50 outline-none transition-all"
+                      placeholder="e.g. 123456789012"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">IFSC Code (Optional)</label>
+                    <input
+                      type="text"
+                      value={formIfscCode}
+                      onChange={e => setFormIfscCode(e.target.value.toUpperCase())}
+                      className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl font-sans text-sm text-gray-900 dark:text-gray-50 outline-none transition-all uppercase placeholder:normal-case"
+                      placeholder="e.g. HDFC0001234"
+                      maxLength={11}
+                    />
+                  </div>
+
+                  {/* Notes (optional textarea) — full width */}
+                  <div className="col-span-1 sm:col-span-2">
+                    <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Notes (Optional)</label>
+                    <textarea
+                      value={formNotes}
+                      onChange={e => setFormNotes(e.target.value)}
+                      rows={2}
+                      className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl font-sans text-sm text-gray-900 dark:text-gray-50 outline-none transition-all"
+                      placeholder="Add any private notes here..."
+                    />
+                  </div>
+
+                  {/* Status (if editing) */}
+                  {editingAccountId && (
+                    <div className="col-span-1 sm:col-span-2">
+                      <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Status</label>
+                      <select
+                        value={formStatus}
+                        onChange={e => setFormStatus(e.target.value as any)}
+                        className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-50 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-sans font-medium"
+                      >
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="closed">Closed</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+
+                {/* Collapsible "More options" section */}
+                <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
+                  <button
+                    type="button"
+                    onClick={() => setShowMoreOptions(!showMoreOptions)}
+                    className="inline-flex items-center gap-1.5 text-sm font-sans font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                  >
+                    <span>{showMoreOptions ? '- Less options' : '+ More options'}</span>
+                    {showMoreOptions ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </button>
+
+                  {showMoreOptions && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                      {/* Account Purpose Tag | Branch Name (Optional) */}
+                      <div>
+                        <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Account Purpose Tag</label>
+                        <select
+                          value={formPurpose}
+                          onChange={e => setFormPurpose(e.target.value)}
+                          className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-50 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-sans font-medium"
+                        >
+                          <option value="">Select Purpose...</option>
+                          <option value="Primary">Primary</option>
+                          <option value="Emergency Fund">Emergency Fund</option>
+                          <option value="Business">Business</option>
+                          <option value="Joint">Joint</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Branch Name (Optional)</label>
+                        <input
+                          type="text"
+                          value={formBranchName}
+                          onChange={e => setFormBranchName(e.target.value)}
+                          className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl font-sans text-sm text-gray-900 dark:text-gray-50 outline-none transition-all"
+                          placeholder="e.g. Downtown Branch"
+                        />
+                      </div>
+
+                      {/* Netbanking/Vault Link (optional) */}
+                      <div className="col-span-1 sm:col-span-2">
+                        <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Netbanking / Vault Link (optional)</label>
+                        <input
+                          type="url"
+                          value={formVaultLink}
+                          onChange={e => setFormVaultLink(e.target.value)}
+                          className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl font-sans text-sm text-gray-900 dark:text-gray-50 outline-none transition-all"
+                          placeholder="https://..."
+                        />
+                        <p className="font-sans text-[11px] text-gray-500 dark:text-gray-400 mt-1">We never store credentials — just a quick link to your bank or password manager.</p>
+                      </div>
+
+                      {/* Set Default Account (toggle) */}
+                      <div className="col-span-1 sm:col-span-2 flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 rounded-xl">
+                        <div>
+                          <span className="font-sans text-sm font-semibold text-gray-900 dark:text-gray-50">Set as Default Account</span>
+                          <p className="font-sans text-xs text-gray-500 dark:text-gray-400">Toggling this on will auto-disable other default accounts.</p>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={formIsDefault}
+                          onChange={e => setFormIsDefault(e.target.checked)}
+                          className="w-5 h-5 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {formError && (
-                <p className="text-red-500 font-sans text-xs font-medium">{formError}</p>
+                <p className="text-red-500 font-sans text-xs font-medium px-1">{formError}</p>
               )}
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-3 pt-4 mt-2 border-t border-gray-100 dark:border-gray-800 shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsAddOpen(false)}

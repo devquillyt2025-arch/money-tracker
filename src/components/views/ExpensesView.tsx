@@ -330,6 +330,23 @@ export default function ExpensesView({
     }
   };
 
+  // --- STAT CALCULATIONS (Based on filtered entries) ---
+  const debitsList = filteredEntries.filter(e => e.type === 'expense');
+  const creditsList = filteredEntries.filter(e => e.type === 'income');
+  const totalDebits = debitsList.reduce((sum, e) => sum + e.amount, 0);
+  const totalCredits = creditsList.reduce((sum, e) => sum + e.amount, 0);
+  const netOutflow = totalDebits - totalCredits;
+  const avgPayment = debitsList.length > 0 ? totalDebits / debitsList.length : 0;
+  const totalTransactions = filteredEntries.length;
+  
+  let largestPayment = 0;
+  let largestPaymentName = 'None';
+  if (debitsList.length > 0) {
+    const maxDebit = [...debitsList].sort((a, b) => b.amount - a.amount)[0];
+    largestPayment = maxDebit.amount;
+    largestPaymentName = maxDebit.name;
+  }
+
   return (
     <div className="space-y-6">
       {/* 1. HEADER & ACTION ROW */}
@@ -431,6 +448,9 @@ export default function ExpensesView({
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-800 text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400 dark:text-gray-500 font-sans bg-gray-50 dark:bg-gray-800/50/50">
+                <th className="py-3 px-5 font-semibold select-none w-12 text-center">
+                  S.No
+                </th>
                 <th 
                   onClick={() => handleSort('name')}
                   className="py-3 px-5 font-semibold cursor-pointer select-none hover:text-gray-900 dark:text-gray-50"
@@ -479,10 +499,13 @@ export default function ExpensesView({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {sortedEntries.map((entry) => {
+              {sortedEntries.map((entry, index) => {
                 const isIncome = entry.type === 'income';
                 return (
                   <tr key={entry.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800/50/50 transition-colors">
+                    <td className="py-3 px-5 text-xs text-gray-400 dark:text-gray-500 font-sans text-center font-medium">
+                      {index + 1}
+                    </td>
                     <td className="py-3 px-5 text-sm text-gray-900 dark:text-gray-50 font-medium max-w-[200px] truncate">
                       {entry.name}
                     </td>
@@ -522,7 +545,7 @@ export default function ExpensesView({
               })}
               {sortedEntries.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-sm text-gray-400 dark:text-gray-500 italic">
+                  <td colSpan={6} className="py-8 text-center text-sm text-gray-400 dark:text-gray-500 italic">
                     No records found matching filters.
                   </td>
                 </tr>
@@ -533,6 +556,104 @@ export default function ExpensesView({
         <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 flex justify-between items-center text-xs font-sans text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium">
           <span>Total Query Match: {sortedEntries.length} records</span>
           <span>Cloud Sync Active</span>
+        </div>
+      </div>
+
+      {/* OVERVIEW SUMMARY ROW */}
+      <div className="space-y-1.5 pt-1">
+        <h2 className="font-sans text-[11px] uppercase tracking-widest text-gray-500 dark:text-gray-400 font-semibold px-0.5">
+          OVERVIEW
+        </h2>
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          {/* Column 1: Total Debits */}
+          <div className="p-4 flex flex-col justify-between border-b xl:border-b-0 border-r border-gray-100 dark:border-gray-800/60">
+            <div>
+              <span className="text-[11px] font-sans uppercase tracking-widest text-gray-500 dark:text-gray-400 font-medium">
+                Total Debits
+              </span>
+              <div className="text-lg font-sans font-bold text-gray-900 dark:text-gray-50 mt-1">
+                ₹{totalDebits.toLocaleString('en-IN')}
+              </div>
+            </div>
+            <div className="text-[11px] font-sans text-gray-400 dark:text-gray-500 mt-1">
+              {debitsList.length} {debitsList.length === 1 ? 'transaction' : 'transactions'}
+            </div>
+          </div>
+
+          {/* Column 2: Total Credits */}
+          <div className="p-4 flex flex-col justify-between border-b xl:border-b-0 border-r border-gray-100 dark:border-gray-800/60">
+            <div>
+              <span className="text-[11px] font-sans uppercase tracking-widest text-gray-500 dark:text-gray-400 font-medium">
+                Total Credits
+              </span>
+              <div className="text-lg font-sans font-bold text-gray-900 dark:text-gray-50 mt-1">
+                ₹{totalCredits.toLocaleString('en-IN')}
+              </div>
+            </div>
+            <div className="text-[11px] font-sans text-gray-400 dark:text-gray-500 mt-1">
+              {creditsList.length} {creditsList.length === 1 ? 'transaction' : 'transactions'}
+            </div>
+          </div>
+
+          {/* Column 3: Net Outflow */}
+          <div className="p-4 flex flex-col justify-between border-b xl:border-b-0 border-r border-gray-100 dark:border-gray-800/60">
+            <div>
+              <span className="text-[11px] font-sans uppercase tracking-widest text-gray-500 dark:text-gray-400 font-medium">
+                Net Outflow
+              </span>
+              <div className="text-lg font-sans font-bold text-gray-900 dark:text-gray-50 mt-1">
+                {netOutflow < 0 ? '-₹' : '₹'}{Math.abs(netOutflow).toLocaleString('en-IN')}
+              </div>
+            </div>
+            <div className="text-[11px] font-sans text-gray-400 dark:text-gray-500 mt-1">
+              {netOutflow > 0 ? 'Spent more than received' : netOutflow < 0 ? 'Received more than spent' : 'Perfectly balanced'}
+            </div>
+          </div>
+
+          {/* Column 4: Avg Payment */}
+          <div className="p-4 flex flex-col justify-between border-b xl:border-b-0 border-r border-gray-100 dark:border-gray-800/60">
+            <div>
+              <span className="text-[11px] font-sans uppercase tracking-widest text-gray-500 dark:text-gray-400 font-medium">
+                Avg Payment
+              </span>
+              <div className="text-lg font-sans font-bold text-gray-900 dark:text-gray-50 mt-1">
+                ₹{Math.round(avgPayment).toLocaleString('en-IN')}
+              </div>
+            </div>
+            <div className="text-[11px] font-sans text-gray-400 dark:text-gray-500 mt-1">
+              Per debit
+            </div>
+          </div>
+
+          {/* Column 5: Transactions */}
+          <div className="p-4 flex flex-col justify-between border-b xl:border-b-0 border-r border-gray-100 dark:border-gray-800/60">
+            <div>
+              <span className="text-[11px] font-sans uppercase tracking-widest text-gray-500 dark:text-gray-400 font-medium">
+                Transactions
+              </span>
+              <div className="text-lg font-sans font-bold text-gray-900 dark:text-gray-50 mt-1">
+                {totalTransactions}
+              </div>
+            </div>
+            <div className="text-[11px] font-sans text-gray-400 dark:text-gray-500 mt-1">
+              Debits + credits
+            </div>
+          </div>
+
+          {/* Column 6: Largest Payment */}
+          <div className="p-4 flex flex-col justify-between">
+            <div>
+              <span className="text-[11px] font-sans uppercase tracking-widest text-gray-500 dark:text-gray-400 font-medium">
+                Largest Payment
+              </span>
+              <div className="text-lg font-sans font-bold text-gray-900 dark:text-gray-50 mt-1">
+                ₹{largestPayment.toLocaleString('en-IN')}
+              </div>
+            </div>
+            <div className="text-[11px] font-sans text-gray-400 dark:text-gray-500 mt-1 truncate" title={largestPaymentName}>
+              {largestPaymentName}
+            </div>
+          </div>
         </div>
       </div>
 

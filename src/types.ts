@@ -67,6 +67,12 @@ export interface Account {
   status?: 'active' | 'inactive' | 'closed';
   currency?: string;
   balanceUpdatedAt?: string;
+  nickname?: string;
+  branchName?: string;
+  purpose?: string;
+  isDefault?: boolean;
+  notes?: string;
+  vaultLink?: string;
 }
 
 export type ActiveTab = 'dashboard' | 'transactions' | 'investments' | 'debts' | 'goals' | 'analytics' | 'bills' | 'accounts' | 'settings' | 'budgets';
