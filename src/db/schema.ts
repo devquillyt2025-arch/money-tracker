@@ -1,5 +1,6 @@
 import { pgTable, text, integer, boolean, varchar, date, serial, real, jsonb, timestamp } from 'drizzle-orm/pg-core';
 
+
 export const users = pgTable('users', {
   id: text('id').primaryKey(), // Firebase UID
   userName: varchar('user_name', { length: 255 }).notNull().default('Dev'),
@@ -86,4 +87,18 @@ export const accounts = pgTable('accounts', {
   isDefault: boolean('is_default').default(false),
   notes: text('notes'),
   vaultLink: text('vault_link'),
+});
+
+export const activityLogs = pgTable('activity_logs', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  timestamp: timestamp('timestamp').defaultNow().notNull(),
+  module: varchar('module', { length: 100 }).notNull(),
+  action: varchar('action', { length: 255 }).notNull(),
+  entityId: text('entity_id'),
+  entityName: varchar('entity_name', { length: 255 }),
+  oldValue: jsonb('old_value'),
+  newValue: jsonb('new_value'),
+  status: varchar('status', { length: 50 }).default('success').notNull(),
+  details: text('details'),
 });

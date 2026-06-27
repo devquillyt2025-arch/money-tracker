@@ -5,7 +5,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 const { Pool } = pg;
 import { pgTable, text, integer, boolean, varchar, date, real, jsonb, timestamp } from "drizzle-orm/pg-core";
-import { eq } from "drizzle-orm";
+import { eq, and, gte, lte, desc, like, or } from "drizzle-orm";
 import crypto from "crypto";
 import { GoogleGenAI } from "@google/genai";
 
@@ -98,8 +98,22 @@ const accounts = pgTable("accounts", {
   vaultLink: text("vault_link"),
 });
 
+const activityLogs = pgTable("activity_logs", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  module: varchar("module", { length: 100 }).notNull(),
+  action: varchar("action", { length: 255 }).notNull(),
+  entityId: text("entity_id"),
+  entityName: varchar("entity_name", { length: 255 }),
+  oldValue: jsonb("old_value"),
+  newValue: jsonb("new_value"),
+  status: varchar("status", { length: 50 }).default("success").notNull(),
+  details: text("details"),
+});
+
 // ── Database ──────────────────────────────────────────────────────────────────
-const schema = { users, entries, bills, goals, holdings, debts, paymentHistory, accounts };
+const schema = { users, entries, bills, goals, holdings, debts, paymentHistory, accounts, activityLogs };
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   connectionTimeoutMillis: 15000,
@@ -475,6 +489,79 @@ Return ONLY a JSON object with a 'transactions' array containing these objects. 
     const errDetail = e instanceof Error ? `${e.name}: ${e.message} ${JSON.stringify(e)}` : JSON.stringify(e);
     res.status(500).json({ error: `Backend API Error: ${errDetail}` });
   }
+});
+
+// ── Activity Logs ─────────────────────────────────────────────────────────────
+app.post("/api/activity-logs", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const uid = req.user!.uid;
+    const { module, action, entityId, entityName, oldValue, newValue, status, details } = req.body;
+    const item = await db.insert(activityLogs).values({
+      id: crypto.randomUUID(),
+      userId: uid,
+      module: module || "System",
+      action: action || "Unknown",
+      entityId: entityId || null,
+      entityName: entityName || null,
+      oldValue: oldValue !== undefined ? oldValue : null,
+      newValue: newValue !== undefined ? newValue : null,
+      status: status || "success",
+      details: details || null,
+    }).returning();
+    res.json(item[0]);
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.get("/api/activity-logs", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const uid = req.user!.uid;
+    const { module: mod, status: st, from, to, q, page = "1", limit = "20" } = req.query as Record<string, string>;
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
+    const offset = (pageNum - 1) * limitNum;
+
+    const conditions: any[] = [eq(activityLogs.userId, uid)];
+    if (mod && mod !== "all") conditions.push(eq(activityLogs.module, mod));
+    if (st && st !== "all") conditions.push(eq(activityLogs.status, st));
+    if (from) conditions.push(gte(activityLogs.timestamp, new Date(from)));
+    if (to) conditions.push(lte(activityLogs.timestamp, new Date(to)));
+
+    const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
+
+    const allLogs = await db.select().from(activityLogs)
+      .where(whereClause)
+      .orderBy(desc(activityLogs.timestamp));
+
+    // Client-side search filter (jsonb text search fallback)
+    const filtered = q
+      ? allLogs.filter(log =>
+          [log.action, log.module, log.entityName, log.details]
+            .some(f => f?.toLowerCase().includes(q.toLowerCase()))
+        )
+      : allLogs;
+
+    const total = filtered.length;
+    const paginated = filtered.slice(offset, offset + limitNum);
+    res.json({ logs: paginated, total, page: pageNum, limit: limitNum });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete("/api/activity-logs", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const uid = req.user!.uid;
+    const { olderThanDays } = req.query as Record<string, string>;
+    if (olderThanDays) {
+      const days = parseInt(olderThanDays);
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - days);
+      await db.delete(activityLogs).where(
+        and(eq(activityLogs.userId, uid), lte(activityLogs.timestamp, cutoff))
+      );
+    } else {
+      await db.delete(activityLogs).where(eq(activityLogs.userId, uid));
+    }
+    res.json({ success: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
 export default app;

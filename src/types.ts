@@ -75,4 +75,4 @@ export interface Account {
   vaultLink?: string | null;
 }
 
-export type ActiveTab = 'dashboard' | 'transactions' | 'investments' | 'debts' | 'goals' | 'analytics' | 'bills' | 'accounts' | 'settings' | 'budgets';
+export type ActiveTab = 'dashboard' | 'transactions' | 'investments' | 'debts' | 'goals' | 'analytics' | 'bills' | 'accounts' | 'settings' | 'budgets' | 'activity-log';

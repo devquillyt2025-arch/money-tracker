@@ -12,11 +12,13 @@ import AnalyticsView from './components/views/AnalyticsView';
 import SettingsView from './components/views/SettingsView';
 import BillsView from './components/views/BillsView';
 import BudgetsView from './components/views/BudgetsView';
+import ActivityLogView from './components/views/ActivityLogView';
 import { Menu, Search, Clock, X } from 'lucide-react';
 
 import { auth, googleAuthProvider } from './lib/firebase';
 import { signInWithPopup, onAuthStateChanged, User } from 'firebase/auth';
 import { api } from './lib/api';
+import { logActivity } from './lib/activityLog';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
@@ -181,6 +183,7 @@ export default function App() {
     setUserName(name);
     try {
       await api.updateUser({ userName: name });
+      logActivity({ module: 'Settings', action: 'Profile Updated', newValue: { userName: name } });
     } catch (e) {
       console.error(e);
     }
@@ -190,6 +193,7 @@ export default function App() {
     setCategoryBudgets(budgets);
     try {
       await api.updateUser({ categoryBudgets: budgets });
+      logActivity({ module: 'Budgets', action: 'Budgets Updated', details: `${Object.keys(budgets).length} categories` });
     } catch (e) {
       console.error(e);
     }
@@ -199,6 +203,7 @@ export default function App() {
     try {
       const created = await api.createEntry(newEntry);
       setEntries(prev => [created, ...prev]);
+      logActivity({ module: 'Transactions', action: 'Transaction Created', entityId: created.id, entityName: created.name, newValue: { amount: created.amount, type: created.type, category: created.category, date: created.date } });
     } catch (e) {
       console.error(e);
     }
@@ -206,12 +211,15 @@ export default function App() {
 
   const handleAddEntries = (newEntries: Entry[]) => {
     setEntries(prev => [...newEntries, ...prev]);
+    logActivity({ module: 'Transactions', action: 'Transactions Imported', details: `${newEntries.length} transactions imported` });
   };
 
   const handleEditEntry = async (id: string, updated: Partial<Entry>) => {
     try {
+      const prev = entries.find(e => e.id === id);
       const updatedEntry = await api.updateEntry(id, updated);
-      setEntries(prev => prev.map(e => e.id === id ? { ...e, ...updatedEntry } : e));
+      setEntries(prev2 => prev2.map(e => e.id === id ? { ...e, ...updatedEntry } : e));
+      logActivity({ module: 'Transactions', action: 'Transaction Updated', entityId: id, entityName: updatedEntry.name, oldValue: prev ? { amount: prev.amount, category: prev.category, date: prev.date } : undefined, newValue: { amount: updatedEntry.amount, category: updatedEntry.category, date: updatedEntry.date } });
     } catch (e) {
       console.error(e);
     }
@@ -219,8 +227,10 @@ export default function App() {
 
   const handleDeleteEntry = async (id: string) => {
     try {
+      const entry = entries.find(e => e.id === id);
       await api.deleteEntry(id);
       setEntries(prev => prev.filter(e => e.id !== id));
+      logActivity({ module: 'Transactions', action: 'Transaction Deleted', entityId: id, entityName: entry?.name, oldValue: entry ? { amount: entry.amount, category: entry.category } : undefined });
     } catch (e) {
       console.error(e);
     }
@@ -250,6 +260,7 @@ export default function App() {
     try {
       const created = await api.createBill({ ...newBill, paid: false });
       setBills(prev => [created, ...prev]);
+      logActivity({ module: 'Bills', action: 'Bill Created', entityId: created.id, entityName: created.name, newValue: { amount: created.amount, category: created.category } });
     } catch (e) {
       console.error(e);
     }
@@ -257,8 +268,10 @@ export default function App() {
 
   const handleDeleteBill = async (id: string) => {
     try {
+      const bill = bills.find(b => b.id === id);
       await api.deleteBill(id);
       setBills(prev => prev.filter(b => b.id !== id));
+      logActivity({ module: 'Bills', action: 'Bill Deleted', entityId: id, entityName: bill?.name });
     } catch (e) {
       console.error(e);
     }
@@ -268,6 +281,7 @@ export default function App() {
     try {
       const created = await api.createDebt(newDebt);
       setDebts(prev => [created, ...prev]);
+      logActivity({ module: 'Debts', action: 'Debt Created', entityId: created.id, entityName: created.name, newValue: { totalAmount: created.totalAmount, type: created.type } });
     } catch (e) {
       console.error(e);
     }
@@ -275,8 +289,10 @@ export default function App() {
 
   const handleUpdateDebt = async (id: string, updated: Partial<Debt>) => {
     try {
+      const prev = debts.find(d => d.id === id);
       const updatedDebt = await api.updateDebt(id, updated);
-      setDebts(prev => prev.map(d => d.id === id ? { ...d, ...updatedDebt } : d));
+      setDebts(prev2 => prev2.map(d => d.id === id ? { ...d, ...updatedDebt } : d));
+      logActivity({ module: 'Debts', action: 'Debt Updated', entityId: id, entityName: updatedDebt.name, oldValue: prev ? { remainingAmount: prev.remainingAmount } : undefined, newValue: { remainingAmount: updatedDebt.remainingAmount } });
     } catch (e) {
       console.error(e);
     }
@@ -284,8 +300,10 @@ export default function App() {
 
   const handleDeleteDebt = async (id: string) => {
     try {
+      const debt = debts.find(d => d.id === id);
       await api.deleteDebt(id);
       setDebts(prev => prev.filter(d => d.id !== id));
+      logActivity({ module: 'Debts', action: 'Debt Deleted', entityId: id, entityName: debt?.name });
     } catch (e) {
       console.error(e);
     }
@@ -295,6 +313,7 @@ export default function App() {
     try {
       const created = await api.createHolding(holding);
       setHoldings(prev => [...prev, created]);
+      logActivity({ module: 'Investments', action: 'Holding Created', entityId: created.id, entityName: created.name, newValue: { investedAmount: created.investedAmount, currentValue: created.currentValue } });
     } catch (e) {
       console.error(e);
     }
@@ -302,8 +321,10 @@ export default function App() {
 
   const handleUpdateHolding = async (id: string, updated: any) => {
     try {
+      const prev = holdings.find(h => h.id === id);
       const updatedHolding = await api.updateHolding(id, updated);
-      setHoldings(prev => prev.map(h => h.id === id ? { ...h, ...updatedHolding } : h));
+      setHoldings(prev2 => prev2.map(h => h.id === id ? { ...h, ...updatedHolding } : h));
+      logActivity({ module: 'Investments', action: 'Holding Updated', entityId: id, entityName: updatedHolding.name, oldValue: prev ? { currentValue: prev.currentValue } : undefined, newValue: { currentValue: updatedHolding.currentValue } });
     } catch (e) {
       console.error(e);
     }
@@ -311,8 +332,10 @@ export default function App() {
 
   const handleDeleteHolding = async (id: string) => {
     try {
+      const holding = holdings.find(h => h.id === id);
       await api.deleteHolding(id);
       setHoldings(prev => prev.filter(h => h.id !== id));
+      logActivity({ module: 'Investments', action: 'Holding Deleted', entityId: id, entityName: holding?.name });
     } catch (e) {
       console.error(e);
     }
@@ -333,18 +356,25 @@ export default function App() {
       const isDef = newAccount.isDefault || newAccount.isPrimary;
       return [...(isDef ? prev.map(a => ({ ...a, isDefault: false, isPrimary: false })) : prev), newAccount];
     });
+    logActivity({ module: 'Accounts', action: 'Account Created', entityId: newAccount.id, entityName: newAccount.name, newValue: { balance: newAccount.balance, type: newAccount.type } });
   };
 
   const handleUpdateAccount = async (id: string, updated: Partial<Account>) => {
     try {
+      const prev = accounts.find(a => a.id === id);
       const updatedAccount = await api.updateAccount(id, updated);
-      setAccounts(prev => {
+      setAccounts(prev2 => {
         const isDef = updatedAccount.isDefault || updatedAccount.isPrimary;
-        return prev.map(a => {
+        return prev2.map(a => {
           if (a.id === id) return { ...a, ...updatedAccount };
           if (isDef) return { ...a, isDefault: false, isPrimary: false };
           return a;
         });
+      });
+      logActivity({
+        module: 'Accounts', action: 'Account Updated', entityId: id, entityName: updatedAccount.name,
+        oldValue: prev ? { balance: prev.balance, status: prev.status, nickname: prev.nickname } : undefined,
+        newValue: { balance: updatedAccount.balance, status: updatedAccount.status, nickname: updatedAccount.nickname },
       });
     } catch (e) {
       console.error(e);
@@ -353,8 +383,10 @@ export default function App() {
 
   const handleDeleteAccount = async (id: string) => {
     try {
+      const account = accounts.find(a => a.id === id);
       await api.deleteAccount(id);
       setAccounts(prev => prev.filter(a => a.id !== id));
+      logActivity({ module: 'Accounts', action: 'Account Deleted', entityId: id, entityName: account?.name, oldValue: account ? { balance: account.balance } : undefined });
     } catch (e) {
       console.error(e);
     }
@@ -556,6 +588,8 @@ export default function App() {
             setTheme={setTheme}
           />
         );
+      case 'activity-log':
+        return <ActivityLogView />;
       default:
         return <div>Protcol View Error</div>;
     }

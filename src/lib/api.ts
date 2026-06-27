@@ -217,4 +217,48 @@ export const api = {
     }
     return res.json();
   },
+
+  createActivityLog: async (log: any) => {
+    const res = await fetch("/api/activity-logs", {
+      method: "POST",
+      headers: await getHeaders(),
+      body: JSON.stringify(log),
+    });
+    if (!res.ok) throw new Error("Failed to write activity log");
+    return res.json();
+  },
+
+  getActivityLogs: async (params: {
+    module?: string;
+    status?: string;
+    from?: string;
+    to?: string;
+    q?: string;
+    page?: number;
+    limit?: number;
+  } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.module) qs.set('module', params.module);
+    if (params.status) qs.set('status', params.status);
+    if (params.from) qs.set('from', params.from);
+    if (params.to) qs.set('to', params.to);
+    if (params.q) qs.set('q', params.q);
+    if (params.page) qs.set('page', String(params.page));
+    if (params.limit) qs.set('limit', String(params.limit));
+    const res = await fetch(`/api/activity-logs?${qs.toString()}`, { headers: await getHeaders() });
+    if (!res.ok) throw new Error("Failed to fetch activity logs");
+    return res.json();
+  },
+
+  deleteActivityLogs: async (olderThanDays?: number) => {
+    const url = olderThanDays
+      ? `/api/activity-logs?olderThanDays=${olderThanDays}`
+      : `/api/activity-logs`;
+    const res = await fetch(url, {
+      method: "DELETE",
+      headers: await getHeaders(),
+    });
+    if (!res.ok) throw new Error("Failed to delete activity logs");
+    return res.json();
+  },
 };
