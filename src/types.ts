@@ -59,20 +59,20 @@ export interface Account {
   name: string;
   type: string;
   balance: number;
-  accountType?: 'Savings' | 'Current' | 'Salary' | 'NRI' | 'Joint';
-  accountNumber?: string;
-  ifscCode?: string;
+  accountType?: 'Savings' | 'Current' | 'Salary' | 'NRI' | 'Joint' | null;
+  accountNumber?: string | null;
+  ifscCode?: string | null;
   availableBalance?: number | null;
-  isPrimary?: boolean;
-  status?: 'active' | 'inactive' | 'closed';
-  currency?: string;
-  balanceUpdatedAt?: string;
-  nickname?: string;
-  branchName?: string;
-  purpose?: string;
-  isDefault?: boolean;
-  notes?: string;
-  vaultLink?: string;
+  isPrimary?: boolean | null;
+  status?: 'active' | 'inactive' | 'closed' | null;
+  currency?: string | null;
+  balanceUpdatedAt?: string | null;
+  nickname?: string | null;
+  branchName?: string | null;
+  purpose?: string | null;
+  isDefault?: boolean | null;
+  notes?: string | null;
+  vaultLink?: string | null;
 }
 
 export type ActiveTab = 'dashboard' | 'transactions' | 'investments' | 'debts' | 'goals' | 'analytics' | 'bills' | 'accounts' | 'settings' | 'budgets';

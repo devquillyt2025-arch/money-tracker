@@ -165,15 +165,15 @@ export default function AccountsView({
         type: formType,
         balance: Math.round(balance),
         status: formStatus,
-        accountNumber: formAccountNumber.trim() || undefined,
-        ifscCode: formIfscCode.trim() || undefined,
-        nickname: formNickname.trim() || undefined,
-        branchName: formBranchName.trim() || undefined,
-        purpose: formPurpose.trim() || undefined,
+        accountNumber: formAccountNumber.trim() || null,
+        ifscCode: formIfscCode.trim() || null,
+        nickname: formNickname.trim() || null,
+        branchName: formBranchName.trim() || null,
+        purpose: formPurpose.trim() || null,
         isDefault: formIsDefault,
         isPrimary: formIsDefault,
-        notes: formNotes.trim() || undefined,
-        vaultLink: formVaultLink.trim() || undefined,
+        notes: formNotes.trim() || null,
+        vaultLink: formVaultLink.trim() || null,
       };
 
       if (editingAccountId) {
@@ -345,13 +345,18 @@ export default function AccountsView({
                 </div>
                 <div>
                   <h3 className="font-sans font-semibold text-gray-900 dark:text-gray-50 text-lg flex items-center gap-2">
-                    {account.nickname?.trim() ? account.nickname : account.name}
+                    {account.name}
                     {(account.isDefault || account.isPrimary) && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-[11px] rounded-full font-medium border border-amber-200 dark:border-amber-800">
                         <Star size={12} className="fill-amber-500 text-amber-500" /> Default
                       </span>
                     )}
                   </h3>
+                  {account.nickname?.trim() && (
+                    <p className="font-sans text-sm text-gray-500 dark:text-gray-400 mt-0.5 font-medium">
+                      {account.nickname}
+                    </p>
+                  )}
                   <div className="flex flex-wrap items-center gap-2 mt-1">
                     <span className="inline-block px-2.5 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs rounded-full font-medium capitalize border border-gray-200 dark:border-gray-700">
                       {account.type}
