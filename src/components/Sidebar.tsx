@@ -1,16 +1,17 @@
 import React from 'react';
-import { 
-  LayoutDashboard, 
-  Receipt, 
-  TrendingUp, 
-  Target, 
-  BarChart3, 
+import {
+  LayoutDashboard,
+  Receipt,
+  TrendingUp,
+  Target,
+  BarChart3,
   Settings,
   Menu,
   X,
   CreditCard,
   FileText,
-  Landmark
+  Landmark,
+  Wallet
 } from 'lucide-react';
 import { ActiveTab } from '../types';
 
@@ -36,6 +37,7 @@ export default function Sidebar({
     { id: 'investments' as ActiveTab, label: 'Investments', icon: TrendingUp, section: 'General' },
     { id: 'debts' as ActiveTab, label: 'Debt & Loans', icon: CreditCard, section: 'General' },
     { id: 'goals' as ActiveTab, label: 'Goals', icon: Target, section: 'General' },
+    { id: 'budgets' as ActiveTab, label: 'Budgets', icon: Wallet, section: 'General' },
     { id: 'analytics' as ActiveTab, label: 'Analytics', icon: BarChart3, section: 'Tools' },
     { id: 'settings' as ActiveTab, label: 'Settings', icon: Settings, section: 'Tools' },
   ];

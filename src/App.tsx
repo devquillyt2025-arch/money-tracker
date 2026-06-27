@@ -11,6 +11,7 @@ import GoalsView from './components/views/GoalsView';
 import AnalyticsView from './components/views/AnalyticsView';
 import SettingsView from './components/views/SettingsView';
 import BillsView from './components/views/BillsView';
+import BudgetsView from './components/views/BudgetsView';
 import { Menu, Search, Clock, X } from 'lucide-react';
 
 import { auth, googleAuthProvider } from './lib/firebase';
@@ -509,6 +510,14 @@ export default function App() {
             onAddTransaction={handleAddEntry}
           />
         );
+      case 'budgets':
+        return (
+          <BudgetsView
+            categoryBudgets={categoryBudgets}
+            setCategoryBudgets={updateCategoryBudgets}
+            entries={entries}
+          />
+        );
       case 'analytics':
         return (
           <AnalyticsView
@@ -521,8 +530,6 @@ export default function App() {
           <SettingsView
             userName={userName}
             setUserName={updateUserName}
-            categoryBudgets={categoryBudgets}
-            setCategoryBudgets={updateCategoryBudgets}
             bills={bills}
             onAddBill={handleAddBill}
             onDeleteBill={handleDeleteBill}

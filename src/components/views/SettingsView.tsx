@@ -1,6 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Bill } from '../../types';
-import { DEFAULT_CATEGORIES } from '../../initialData';
 import { 
   User, 
   Settings, 
@@ -21,8 +20,6 @@ import {
 interface SettingsViewProps {
   userName: string;
   setUserName: (name: string) => void;
-  categoryBudgets: Record<string, number>;
-  setCategoryBudgets: (budgets: Record<string, number>) => void;
   bills: Bill[];
   onAddBill: (bill: Omit<Bill, 'id' | 'paid'>) => void;
   onDeleteBill: (id: string) => void;
@@ -37,8 +34,6 @@ interface SettingsViewProps {
 export default function SettingsView({
   userName,
   setUserName,
-  categoryBudgets,
-  setCategoryBudgets,
   bills,
   onAddBill,
   onDeleteBill,
@@ -53,27 +48,12 @@ export default function SettingsView({
   const [profileName, setProfileName] = useState(userName);
   const [isNameSaved, setIsNameSaved] = useState(false);
 
-  // Form states for adding a recurring bill
-  const [localBudgets, setLocalBudgets] = useState<Record<string, number>>(categoryBudgets);
-  const [isBudgetsSaved, setIsBudgetsSaved] = useState(false);
-
   const [isAddingBill, setIsAddingBill] = useState(false);
   const [billName, setBillName] = useState('');
   const [billDueDate, setBillDueDate] = useState('Monthly, 15th');
   const [billAmount, setBillAmount] = useState('');
   const [billCategory, setBillCategory] = useState('Bills & Subscription');
   const [billError, setBillError] = useState('');
-
-  useEffect(() => {
-    setLocalBudgets(categoryBudgets);
-  }, [categoryBudgets]);
-
-  const handleSaveBudgets = (e: React.FormEvent) => {
-    e.preventDefault();
-    setCategoryBudgets(localBudgets);
-    setIsBudgetsSaved(true);
-    setTimeout(() => setIsBudgetsSaved(false), 2000);
-  };
 
   // JSON Import States
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -192,46 +172,6 @@ export default function SettingsView({
                     'UPDATE_NAME'
                   )}
                 </button>
-              </form>
-            </div>
-
-            <div>
-              <h3 className="font-sans font-medium text-xs text-gray-900 dark:text-gray-50 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700/40 pb-2 flex items-center gap-2">
-                <Settings size={13} className="text-blue-600 dark:text-blue-400" /> Category Budgets Configuration
-              </h3>
-              
-              <form onSubmit={handleSaveBudgets} className="mt-4 space-y-4">
-                {DEFAULT_CATEGORIES.map(cat => (
-                  <div key={cat} className="flex gap-4 items-center">
-                    <label className="w-40 font-sans text-xs text-gray-700 dark:text-gray-300">
-                      {cat} Limit
-                    </label>
-                    <input
-                      type="number"
-                      value={localBudgets[cat] || ''}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value) || 0;
-                        setLocalBudgets({ ...localBudgets, [cat]: val });
-                      }}
-                      className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 focus:border-[#E0BD7D] rounded-[6px] text-xs text-gray-900 dark:text-gray-50 outline-none transition-colors"
-                      placeholder="e.g. 10000"
-                    />
-                  </div>
-                ))}
-                <div className="flex justify-end pt-2">
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-700 text-xs font-sans font-medium text-gray-900 dark:text-gray-50 rounded-[6px] flex items-center gap-1.5 transition-colors"
-                  >
-                    {isBudgetsSaved ? (
-                      <>
-                        <Check size={12} className="text-green-600 dark:text-green-400" /> SAVED
-                      </>
-                    ) : (
-                      'SAVE BUDGETS'
-                    )}
-                  </button>
-                </div>
               </form>
             </div>
 
