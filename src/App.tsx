@@ -278,24 +278,18 @@ export default function App() {
   };
 
   const handleAddDebt = async (newDebt: Omit<Debt, 'id'>) => {
-    try {
-      const created = await api.createDebt(newDebt);
-      setDebts(prev => [created, ...prev]);
-      logActivity({ module: 'Debts', action: 'Debt Created', entityId: created.id, entityName: created.name, newValue: { totalAmount: created.totalAmount, type: created.type } });
-    } catch (e) {
-      console.error(e);
-    }
+    const created = await api.createDebt(newDebt);
+    if (!created?.id) throw new Error(created?.error ?? 'Failed to create debt');
+    setDebts(prev => [created, ...prev]);
+    logActivity({ module: 'Debts', action: 'Debt Created', entityId: created.id, entityName: created.name, newValue: { totalAmount: created.totalAmount, type: created.type } });
   };
 
   const handleUpdateDebt = async (id: string, updated: Partial<Debt>) => {
-    try {
-      const prev = debts.find(d => d.id === id);
-      const updatedDebt = await api.updateDebt(id, updated);
-      setDebts(prev2 => prev2.map(d => d.id === id ? { ...d, ...updatedDebt } : d));
-      logActivity({ module: 'Debts', action: 'Debt Updated', entityId: id, entityName: updatedDebt.name, oldValue: prev ? { remainingAmount: prev.remainingAmount } : undefined, newValue: { remainingAmount: updatedDebt.remainingAmount } });
-    } catch (e) {
-      console.error(e);
-    }
+    const prev = debts.find(d => d.id === id);
+    const updatedDebt = await api.updateDebt(id, updated);
+    if (!updatedDebt?.id) throw new Error(updatedDebt?.error ?? 'Failed to update debt');
+    setDebts(prev2 => prev2.map(d => d.id === id ? { ...d, ...updatedDebt } : d));
+    logActivity({ module: 'Debts', action: 'Debt Updated', entityId: id, entityName: updatedDebt.name, oldValue: prev ? { remainingAmount: prev.remainingAmount } : undefined, newValue: { remainingAmount: updatedDebt.remainingAmount } });
   };
 
   const handleDeleteDebt = async (id: string) => {

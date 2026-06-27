@@ -7,8 +7,8 @@ interface DebtsViewProps {
   debts: Debt[];
   entries: Entry[];
   paymentHistory: PaymentHistory[];
-  onAddDebt: (debt: Omit<Debt, 'id'>) => void;
-  onUpdateDebt: (id: string, updated: Partial<Debt>) => void;
+  onAddDebt: (debt: Omit<Debt, 'id'>) => Promise<void>;
+  onUpdateDebt: (id: string, updated: Partial<Debt>) => Promise<void>;
   onDeleteDebt: (id: string) => void;
   onAddTransaction: (entry: Omit<Entry, 'id'>) => void;
   onAddPaymentHistory: (payment: Omit<PaymentHistory, 'id'>) => void;
@@ -32,13 +32,18 @@ export default function DebtsView({
   const [formRemaining, setFormRemaining] = useState('');
   const [formInterest, setFormInterest] = useState('');
   const [formEmi, setFormEmi] = useState('');
-  const [formStartDate, setFormStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [formNextDueDate, setFormNextDueDate] = useState('');
+  const [formStartDate, setFormStartDate] = useState('');
   const [formError, setFormError] = useState('');
+  // True once the user has manually touched Next Due Date — prevents auto-fill from overwriting a manual edit
+  const [nextDueDateTouched, setNextDueDateTouched] = useState(false);
 
   const [historyDebtId, setHistoryDebtId] = useState<string | null>(null);
   const [editingDebtId, setEditingDebtId] = useState<string | null>(null);
   const [logPaymentDebtId, setLogPaymentDebtId] = useState<string | null>(null);
   const [logPaymentAmount, setLogPaymentAmount] = useState('');
+  const [logPaymentCoversEmi, setLogPaymentCoversEmi] = useState(true);
+  const [logPaymentConfirm, setLogPaymentConfirm] = useState<string | null>(null);
   const [logPaymentError, setLogPaymentError] = useState('');
 
   const activeDebts = debts.filter(d => d.remainingAmount > 0);
@@ -46,43 +51,35 @@ export default function DebtsView({
   const totalEmi = activeDebts.reduce((sum, d) => sum + (d.emi || 0), 0);
   const debtsWithoutEmi = activeDebts.filter(d => !d.emi || d.emi <= 0);
 
-  const getRawNextEmiDate = (debt: Debt): Date | null => {
-    if (!debt.startDate || !debt.emi || debt.remainingAmount <= 0) return null;
-    const numPaid = Math.max(
-      paymentHistory.filter(p => p.debtId === debt.id).length,
-      Math.floor((debt.totalAmount - debt.remainingAmount) / debt.emi)
-    );
-    const date = new Date(debt.startDate);
-    date.setMonth(date.getMonth() + numPaid + 1);
-    return date;
+  const nextEmiCycle = (nextDueDateStr: string): string => {
+    const [y, m, d] = nextDueDateStr.split('-').map(Number);
+    const next = new Date(y, m - 1, d);
+    next.setMonth(next.getMonth() + 1);
+    return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`;
   };
 
-  // Always returns the next upcoming (future) due date for display.
-  const getNextDueDate = (debt: Debt): Date | null => {
-    const raw = getRawNextEmiDate(debt);
-    if (!raw) return null;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (raw >= today) return raw;
-    // Advance month-by-month to find the next future billing date.
-    const result = new Date(raw);
-    while (result < today) result.setMonth(result.getMonth() + 1);
-    return result;
-  };
+  // Single source of truth for the emis_paid + next_due_date advancement.
+  // Both handleMarkEmiPaid and handleLogPayment spread this into their onUpdateDebt call.
+  const buildEmiAdvance = (debt: Debt): { emisPaid: number; nextDueDate: string } => ({
+    emisPaid: (debt.emisPaid || 0) + 1,
+    nextDueDate: nextEmiCycle(debt.nextDueDate!),
+  });
 
   const isDebtOverdue = (debt: Debt) => {
-    const raw = getRawNextEmiDate(debt);
-    if (!raw) return false;
+    if (!debt.nextDueDate || debt.remainingAmount <= 0) return false;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return raw < today;
+    const [y, m, d] = debt.nextDueDate.split('-').map(Number);
+    return new Date(y, m - 1, d) < today;
   };
 
   const getPayoffDate = (debt: Debt) => {
-    if (!debt.emi || debt.remainingAmount <= 0) return null;
-    const nextDue = getNextDueDate(debt) || new Date();
-    const emisRemaining = Math.ceil(debt.remainingAmount / debt.emi);
-    const payoff = new Date(nextDue);
+    if (!debt.emi || !debt.nextDueDate || debt.remainingAmount <= 0) return null;
+    const totalEmis = Math.ceil(debt.totalAmount / debt.emi);
+    const emisRemaining = Math.max(0, totalEmis - (debt.emisPaid || 0));
+    if (emisRemaining <= 0) return null;
+    const [y, m, d] = debt.nextDueDate.split('-').map(Number);
+    const payoff = new Date(y, m - 1, d);
     payoff.setMonth(payoff.getMonth() + emisRemaining - 1);
     return payoff.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
   };
@@ -99,17 +96,21 @@ export default function DebtsView({
     if (aOverdue && !bOverdue) return -1;
     if (!aOverdue && bOverdue) return 1;
     
-    const aDue = getNextDueDate(a)?.getTime() || Infinity;
-    const bDue = getNextDueDate(b)?.getTime() || Infinity;
+    const aDue = a.nextDueDate ? new Date(a.nextDueDate).getTime() : Infinity;
+    const bDue = b.nextDueDate ? new Date(b.nextDueDate).getTime() : Infinity;
     return aDue - bDue;
   });
 
   const handleMarkEmiPaid = (debt: Debt) => {
-    if (!debt.emi || debt.remainingAmount <= 0) return;
-    
+    if (!debt.emi || debt.remainingAmount <= 0 || !debt.nextDueDate) return;
+
     const newRemaining = Math.max(0, debt.remainingAmount - debt.emi);
-    onUpdateDebt(debt.id, { remainingAmount: newRemaining });
-    
+
+    onUpdateDebt(debt.id, {
+      remainingAmount: newRemaining,
+      ...buildEmiAdvance(debt)
+    });
+
     const today = new Date().toISOString().split('T')[0];
 
     onAddTransaction({
@@ -136,12 +137,20 @@ export default function DebtsView({
     if (isNaN(amt) || amt <= 0) { setLogPaymentError('Enter a valid amount.'); return; }
     if (amt > debt.remainingAmount) { setLogPaymentError(`Amount exceeds remaining ₹${debt.remainingAmount.toLocaleString('en-IN')}.`); return; }
     const newRemaining = Math.max(0, debt.remainingAmount - amt);
-    onUpdateDebt(debt.id, { remainingAmount: newRemaining });
+    const coversEmi = logPaymentCoversEmi && !!debt.emi && amt >= debt.emi && !!debt.nextDueDate;
+    const advance = coversEmi ? buildEmiAdvance(debt) : null;
+    onUpdateDebt(debt.id, { remainingAmount: newRemaining, ...(advance ?? {}) });
     const today = new Date().toISOString().split('T')[0];
     onAddTransaction({ name: `Payment: ${debt.name}`, category: 'Debt Repayment', amount: Math.round(amt), type: 'expense', date: today });
     onAddPaymentHistory({ debtId: debt.id, amount: Math.round(amt), date: today });
-    setLogPaymentDebtId(null);
     setLogPaymentAmount('');
+    if (advance) {
+      const [y, m, d] = advance.nextDueDate.split('-').map(Number);
+      const dateStr = new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      setLogPaymentConfirm(`Payment logged. Next due date advanced to ${dateStr}.`);
+    } else {
+      setLogPaymentConfirm('Payment logged.');
+    }
   };
 
   const openAddModal = () => {
@@ -152,7 +161,9 @@ export default function DebtsView({
     setFormRemaining('');
     setFormInterest('');
     setFormEmi('');
-    setFormStartDate(new Date().toISOString().split('T')[0]);
+    setFormStartDate('');
+    setFormNextDueDate('');
+    setNextDueDateTouched(false);
     setFormError('');
     setEditingDebtId(null);
     setIsAddOpen(true);
@@ -175,13 +186,29 @@ export default function DebtsView({
     setFormRemaining(debt.remainingAmount.toString());
     setFormInterest(debt.interestRate.toString());
     setFormEmi(debt.emi?.toString() || '');
-    setFormStartDate(debt.startDate || new Date().toISOString().split('T')[0]);
+    setFormNextDueDate(debt.nextDueDate || '');
+    setFormStartDate(debt.startDate || '');
+    // Editing: treat nextDueDate as already set by the user — disable auto-fill
+    setNextDueDateTouched(true);
     setFormError('');
     setEditingDebtId(debt.id);
     setIsAddOpen(true);
   };
 
-  const handleAddDebt = (e: React.FormEvent) => {
+  // ── Add-form derived suggestion (pure computation, never stored in state) ──
+  // X = round((total - remaining) / emi). Only valid when emi > 0.
+  const emisPaidSuggestion = (() => {
+    if (editingDebtId) return null; // never show in edit mode
+    const t = parseFloat(formTotal);
+    const r = parseFloat(formRemaining);
+    const e = parseFloat(formEmi);
+    if (isNaN(t) || isNaN(r) || isNaN(e) || e <= 0) return null;
+    const paid = t - r;
+    if (paid <= 0) return null;
+    return Math.round(paid / e);
+  })();
+
+  const handleAddDebt = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
 
@@ -195,6 +222,11 @@ export default function DebtsView({
       return;
     }
 
+    if (!formNextDueDate) {
+      setFormError('Please set the next due date.');
+      return;
+    }
+
     let finalType = formType;
     if (formType === 'custom') {
       if (!customType.trim()) {
@@ -204,29 +236,41 @@ export default function DebtsView({
       finalType = customType.trim();
     }
 
-    if (editingDebtId) {
-      onUpdateDebt(editingDebtId, {
-        name: formName.trim(),
-        type: finalType,
-        totalAmount: Math.round(total),
-        remainingAmount: Math.round(remaining),
-        interestRate: interest,
-        startDate: formStartDate || undefined,
-        ...(emi !== undefined ? { emi: Math.round(emi) } : { emi: undefined })
-      });
-    } else {
-      onAddDebt({
-        name: formName.trim(),
-        type: finalType,
-        totalAmount: Math.round(total),
-        remainingAmount: Math.round(remaining),
-        interestRate: interest,
-        startDate: formStartDate || undefined,
-        ...(emi !== undefined ? { emi: Math.round(emi) } : {})
-      });
+    try {
+      if (editingDebtId) {
+        await onUpdateDebt(editingDebtId, {
+          name: formName.trim(),
+          type: finalType,
+          totalAmount: Math.round(total),
+          remainingAmount: Math.round(remaining),
+          interestRate: interest,
+          nextDueDate: formNextDueDate,
+          startDate: formStartDate || undefined,
+          ...(emi !== undefined ? { emi: Math.round(emi) } : { emi: undefined })
+        });
+      } else {
+        // One-time emisPaid seed at creation. After this point emisPaid is only
+        // ever incremented by buildEmiAdvance — it is never re-derived from amounts.
+        const seedEmisPaid = (emi !== undefined && emi > 0)
+          ? Math.round(Math.max(0, (total - remaining) / emi))
+          : 0;
+        await onAddDebt({
+          name: formName.trim(),
+          type: finalType,
+          totalAmount: Math.round(total),
+          remainingAmount: Math.round(remaining),
+          interestRate: interest,
+          nextDueDate: formNextDueDate,
+          emisPaid: seedEmisPaid,
+          startDate: formStartDate || undefined,
+          ...(emi !== undefined ? { emi: Math.round(emi) } : {})
+        });
+      }
+      setIsAddOpen(false);
+    } catch (err: any) {
+      setFormError(err?.message ?? 'Failed to save. Please try again.');
+      return;
     }
-
-    setIsAddOpen(false);
   };
 
   const getProgress = (debt: Debt) => {
@@ -284,10 +328,11 @@ export default function DebtsView({
         {sortedDebts.map(debt => {
           const isClosed = debt.remainingAmount <= 0;
           const isOverdue = isDebtOverdue(debt);
-          const nextDue = getNextDueDate(debt);
           const payoffDate = getPayoffDate(debt);
 
           const hasEmi = debt.emi !== undefined && debt.emi > 0;
+          const totalEmis = hasEmi ? Math.ceil(debt.totalAmount / debt.emi!) : 0;
+          const emisRemaining = Math.max(0, totalEmis - (debt.emisPaid || 0));
           const paidAmount = debt.totalAmount - debt.remainingAmount;
 
           const currentMonth = new Date().toISOString().slice(0, 7);
@@ -336,13 +381,15 @@ export default function DebtsView({
                     hasEmi ? (
                       <button
                         onClick={() => handleMarkEmiPaid(debt)}
-                        className="px-3 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-xl text-xs font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors whitespace-nowrap"
+                        disabled={!debt.nextDueDate}
+                        title={!debt.nextDueDate ? 'Edit this debt to set a Next Due Date first' : undefined}
+                        className="px-3 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-xl text-xs font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         Mark EMI Paid
                       </button>
                     ) : (
                       <button
-                        onClick={() => { setLogPaymentDebtId(debt.id); setLogPaymentAmount(''); setLogPaymentError(''); }}
+                        onClick={() => { setLogPaymentDebtId(debt.id); setLogPaymentAmount(''); setLogPaymentCoversEmi(true); setLogPaymentConfirm(null); setLogPaymentError(''); }}
                         className="px-3 py-2 bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-xl text-xs font-semibold hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors whitespace-nowrap"
                       >
                         Log Payment
@@ -395,15 +442,15 @@ export default function DebtsView({
               </div>
               <div>
                 <p className="font-sans text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium mb-1">Due Date</p>
-                <p className={`font-sans text-sm font-semibold ${hasEmi && isOverdue ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                  {hasEmi && nextDue ? nextDue.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : <span className="text-gray-300 dark:text-gray-600">—</span>}
+                <p className={`font-sans text-sm font-semibold ${isOverdue ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                  {debt.nextDueDate && !isClosed ? (() => { const [y,m,d] = debt.nextDueDate!.split('-').map(Number); return new Date(y, m-1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); })() : <span className="text-gray-300 dark:text-gray-600">—</span>}
                 </p>
               </div>
               <div>
                 <p className="font-sans text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold mb-1">EMIs Remaining</p>
                 {hasEmi && !isClosed ? (
                   <>
-                    <p className="font-sans text-base font-bold text-blue-600 dark:text-blue-400">{Math.ceil(debt.remainingAmount / debt.emi!)}</p>
+                    <p className="font-sans text-base font-bold text-blue-600 dark:text-blue-400">{emisRemaining}</p>
                     {payoffDate && <p className="font-sans text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">paid off by {payoffDate}</p>}
                   </>
                 ) : (
@@ -535,16 +582,52 @@ export default function DebtsView({
                     className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-50 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-sans font-medium"
                     placeholder="e.g. 500"
                   />
+                  {/* EMI already-paid hint — read-only suggestion, Add form only */}
+                  {emisPaidSuggestion !== null && (
+                    <p className="mt-1.5 text-xs font-sans text-blue-600 dark:text-blue-400">
+                      ≈ {emisPaidSuggestion} EMI{emisPaidSuggestion !== 1 ? 's' : ''} already paid
+                    </p>
+                  )}
                 </div>
                 <div>
-                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">Start Date</label>
+                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                    Next Due Date <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="date"
-                    value={formStartDate}
-                    onChange={e => setFormStartDate(e.target.value)}
+                    required
+                    value={formNextDueDate}
+                    onChange={e => {
+                      setFormNextDueDate(e.target.value);
+                      setNextDueDateTouched(true);
+                    }}
                     className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-50 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-sans font-medium"
                   />
                 </div>
+              </div>
+              <div>
+                <label className="block font-sans text-xs text-gray-400 dark:text-gray-600 font-medium mb-1.5">
+                  Loan Start Date
+                  {!editingDebtId && <span className="ml-1 text-gray-400 dark:text-gray-600">(auto-fills Next Due Date)</span>}
+                </label>
+                <input
+                  type="date"
+                  value={formStartDate}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setFormStartDate(val);
+                    // Auto-fill Next Due Date = startDate + 1 month, only on first pass
+                    if (val && !nextDueDateTouched && !editingDebtId) {
+                      const [y, mo, d] = val.split('-').map(Number);
+                      const next = new Date(y, mo - 1, d);
+                      next.setMonth(next.getMonth() + 1);
+                      setFormNextDueDate(
+                        `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`
+                      );
+                    }
+                  }}
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-50 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-sans font-medium"
+                />
               </div>
               
               {formError && (
@@ -580,10 +663,24 @@ export default function DebtsView({
             <div className="w-full max-w-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6 rounded-2xl shadow-xl">
               <div className="flex justify-between items-center mb-5">
                 <h3 className="text-base font-sans font-semibold text-gray-900 dark:text-gray-50">Log Payment — {debt.name}</h3>
-                <button onClick={() => setLogPaymentDebtId(null)} className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-50">
+                <button onClick={() => { setLogPaymentDebtId(null); setLogPaymentConfirm(null); }} className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-50">
                   <Plus size={20} className="rotate-45" />
                 </button>
               </div>
+              {logPaymentConfirm ? (
+                <div className="space-y-4">
+                  <p className="font-sans text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 p-3 rounded-xl border border-green-200 dark:border-green-800">
+                    {logPaymentConfirm}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => { setLogPaymentDebtId(null); setLogPaymentConfirm(null); }}
+                    className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-sans font-semibold text-sm hover:bg-blue-700 transition-colors shadow-sm"
+                  >
+                    Done
+                  </button>
+                </div>
+              ) : (
               <form onSubmit={handleLogPayment} className="space-y-4">
                 <div>
                   <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
@@ -599,6 +696,27 @@ export default function DebtsView({
                     placeholder="e.g. 5000"
                   />
                 </div>
+                {debt.emi && debt.emi > 0 && (
+                  (() => {
+                    const amt = parseFloat(logPaymentAmount);
+                    const enabled = !isNaN(amt) && amt >= debt.emi;
+                    return (
+                      <label className={`flex items-center gap-2.5 cursor-pointer select-none ${enabled ? '' : 'opacity-40 cursor-not-allowed'}`}>
+                        <input
+                          type="checkbox"
+                          checked={logPaymentCoversEmi && enabled}
+                          disabled={!enabled}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLogPaymentCoversEmi(e.target.checked)}
+                          className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500/50 accent-blue-600"
+                        />
+                        <span className="font-sans text-xs font-medium text-gray-700 dark:text-gray-300">
+                          This payment covers this month's EMI
+                          {enabled && <span className="ml-1 text-gray-400 dark:text-gray-500">(₹{debt.emi.toLocaleString('en-IN')})</span>}
+                        </span>
+                      </label>
+                    );
+                  })()
+                )}
                 {logPaymentError && (
                   <p className="text-red-600 dark:text-red-400 text-xs font-medium bg-red-50 dark:bg-red-900/20 p-2 rounded-xl border border-red-200 dark:border-red-800">{logPaymentError}</p>
                 )}
@@ -607,6 +725,7 @@ export default function DebtsView({
                   <button type="submit" className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl font-sans font-semibold text-sm hover:bg-blue-700 transition-colors shadow-sm">Record Payment</button>
                 </div>
               </form>
+              )}
             </div>
           </div>
         );

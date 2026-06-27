@@ -56,7 +56,9 @@ export const debts = pgTable('debts', {
   remainingAmount: integer('remaining_amount').notNull(),
   interestRate: real('interest_rate'),
   emi: integer('emi'),
-  startDate: date('start_date'),
+  nextDueDate: date('next_due_date'),              // source of truth; nullable until migration backfill
+  emisPaid: integer('emis_paid').notNull().default(0), // explicit counter, only changed by Mark EMI Paid
+  startDate: date('start_date'),                   // record-keeping only, never drives calculations
 });
 
 export const paymentHistory = pgTable('payment_history', {

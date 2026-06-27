@@ -65,6 +65,8 @@ const debts = pgTable("debts", {
   remainingAmount: integer("remaining_amount").notNull(),
   interestRate: real("interest_rate"),
   emi: integer("emi"),
+  nextDueDate: date("next_due_date"),
+  emisPaid: integer("emis_paid").notNull().default(0),
   startDate: date("start_date"),
 });
 

@@ -44,7 +44,9 @@ export interface Debt {
   remainingAmount: number;
   interestRate: number;
   emi?: number;
-  startDate?: string;
+  nextDueDate?: string; // YYYY-MM-DD — source of truth for next payment date
+  emisPaid?: number;    // explicit counter; only incremented by Mark EMI Paid
+  startDate?: string;   // optional, record-keeping only, not used for calculations
 }
 
 export interface PaymentHistory {
