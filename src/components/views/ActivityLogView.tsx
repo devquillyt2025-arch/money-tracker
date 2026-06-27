@@ -189,113 +189,108 @@ export default function ActivityLogView() {
   return (
     <div className="max-w-5xl mx-auto space-y-3">
 
-      {/* ── Compact Toolbar ─────────────────────────────────────────────── */}
-      <div className="flex flex-col gap-2">
-        {/* Title row */}
-        <div className="flex items-center justify-between min-h-[28px]">
-          <div className="flex items-center gap-2.5">
-            <h1 className="font-sans font-semibold text-base text-gray-900 dark:text-gray-50 tracking-tight leading-none">
-              Activity Log
-            </h1>
-            {!loading && (
-              <span className="inline-block px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs font-sans font-medium rounded-full border border-gray-200 dark:border-gray-700">
-                {total.toLocaleString()}
-              </span>
-            )}
-          </div>
+      {/* ── Page title ──────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-2.5">
+        <h1 className="font-sans font-semibold text-lg text-gray-900 dark:text-gray-50 tracking-tight leading-none">
+          Activity Log
+        </h1>
+        {!loading && (
+          <span className="inline-block px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs font-sans font-medium rounded-full border border-gray-200 dark:border-gray-700 leading-none">
+            {total.toLocaleString()}
+          </span>
+        )}
+      </div>
+
+      {/* ── Single-surface toolbar ──────────────────────────────────────── */}
+      <div className="flex flex-wrap items-center gap-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl px-3 py-2 shadow-sm">
+
+        {/* Search — expands to fill available space */}
+        <div className="relative flex-1 min-w-[160px]">
+          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search actions, entities…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full h-9 pl-8 pr-3 bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-sans text-gray-900 dark:text-gray-50 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-shadow"
+          />
         </div>
 
-        {/* Controls row */}
-        <div className="flex flex-wrap items-center gap-1.5">
+        {/* Separator */}
+        <div className="hidden sm:block w-px h-5 bg-gray-200 dark:bg-gray-700 shrink-0" />
 
-          {/* Search */}
-          <div className="relative flex-1 min-w-[160px] max-w-[260px]">
-            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Search…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full pl-7 pr-2.5 py-1.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg text-xs font-sans text-gray-900 dark:text-gray-50 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-shadow"
-            />
-          </div>
+        {/* Module dropdown */}
+        <Select
+          value={moduleFilter}
+          onChange={e => setModuleFilter(e.target.value)}
+          options={MODULES.map(m => ({ value: m, label: m === 'all' ? 'All Modules' : m }))}
+          className="h-9 px-3 bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg font-sans focus:outline-none focus:ring-2 focus:ring-blue-500/40 shrink-0"
+        />
 
-          {/* Divider */}
-          <div className="hidden sm:block w-px h-5 bg-gray-200 dark:bg-gray-800" />
+        {/* Status dropdown */}
+        <Select
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value)}
+          options={[
+            { value: 'all', label: 'All Statuses' },
+            { value: 'success', label: '✓ Success' },
+            { value: 'failure', label: '✗ Failed' },
+          ]}
+          className="h-9 px-3 bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg font-sans focus:outline-none focus:ring-2 focus:ring-blue-500/40 shrink-0"
+        />
 
-          {/* Module */}
-          <Select
-            value={moduleFilter}
-            onChange={e => setModuleFilter(e.target.value)}
-            options={MODULES.map(m => ({ value: m, label: m === 'all' ? 'All Modules' : m }))}
-            className="px-2.5 py-1.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 text-xs rounded-lg font-sans focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-          />
+        {/* Time range dropdown */}
+        <Select
+          value={dateRange}
+          onChange={e => setDateRange(e.target.value)}
+          options={[
+            { value: 'all', label: 'All Time' },
+            { value: 'today', label: 'Today' },
+            { value: '7d', label: 'Last 7 days' },
+            { value: '30d', label: 'Last 30 days' },
+            { value: '90d', label: 'Last 90 days' },
+          ]}
+          className="h-9 px-3 bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg font-sans focus:outline-none focus:ring-2 focus:ring-blue-500/40 shrink-0"
+        />
 
-          {/* Status */}
-          <Select
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-            options={[
-              { value: 'all', label: 'All Statuses' },
-              { value: 'success', label: '✓ Success' },
-              { value: 'failure', label: '✗ Failed' },
-            ]}
-            className="px-2.5 py-1.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 text-xs rounded-lg font-sans focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-          />
+        {/* Right actions — separator + icon buttons */}
+        <div className="hidden sm:block w-px h-5 bg-gray-200 dark:bg-gray-700 shrink-0" />
 
-          {/* Time range */}
-          <Select
-            value={dateRange}
-            onChange={e => setDateRange(e.target.value)}
-            options={[
-              { value: 'all', label: 'All Time' },
-              { value: 'today', label: 'Today' },
-              { value: '7d', label: '7 days' },
-              { value: '30d', label: '30 days' },
-              { value: '90d', label: '90 days' },
-            ]}
-            className="px-2.5 py-1.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 text-xs rounded-lg font-sans focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-          />
+        {/* Refresh */}
+        <button
+          onClick={fetchLogs}
+          title="Refresh"
+          className="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors shrink-0"
+        >
+          <RefreshCw size={15} />
+        </button>
 
-          {/* Spacer */}
-          <div className="flex-1" />
-
-          {/* Refresh */}
-          <button
-            onClick={fetchLogs}
-            title="Refresh"
-            className="p-1.5 rounded-lg border border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-          >
-            <RefreshCw size={14} />
+        {/* Export dropdown */}
+        <div className="relative group shrink-0">
+          <button className="h-9 flex items-center gap-1.5 px-3 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm font-medium font-sans">
+            <Download size={14} />
+            Export
+            <ChevronDown size={13} />
           </button>
-
-          {/* Export dropdown */}
-          <div className="relative group">
-            <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-xs font-medium font-sans">
-              <Download size={13} />
-              Export
-              <ChevronDown size={12} />
+          <div className="absolute right-0 top-full mt-1.5 w-38 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl z-30 overflow-hidden hidden group-hover:block">
+            <button onClick={handleExportCSV} className="w-full text-left px-4 py-2.5 text-sm font-sans text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+              Export as CSV
             </button>
-            <div className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl z-30 overflow-hidden hidden group-hover:block">
-              <button onClick={handleExportCSV} className="w-full text-left px-3 py-2 text-xs font-sans text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
-                Export as CSV
-              </button>
-              <button onClick={handleExportJSON} className="w-full text-left px-3 py-2 text-xs font-sans text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
-                Export as JSON
-              </button>
-            </div>
+            <button onClick={handleExportJSON} className="w-full text-left px-4 py-2.5 text-sm font-sans text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+              Export as JSON
+            </button>
           </div>
-
-          {/* Clear */}
-          <button
-            onClick={() => { setShowClearModal(true); setClearConfirmed(false); }}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-xs font-medium font-sans"
-          >
-            <Trash2 size={13} />
-            Clear
-          </button>
-
         </div>
+
+        {/* Clear */}
+        <button
+          onClick={() => { setShowClearModal(true); setClearConfirmed(false); }}
+          className="h-9 flex items-center gap-1.5 px-3 rounded-lg border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm font-medium font-sans shrink-0"
+        >
+          <Trash2 size={14} />
+          Clear
+        </button>
+
       </div>
 
       {/* Error */}
