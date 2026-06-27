@@ -219,39 +219,37 @@ export default function ActivityLogView() {
         {/* Separator */}
         <div className="hidden sm:block w-px h-5 bg-gray-200 dark:bg-gray-700 shrink-0" />
 
-        {/* Module dropdown */}
-        <Select
-          value={moduleFilter}
-          onChange={e => setModuleFilter(e.target.value)}
-          options={MODULES.map(m => ({ value: m, label: m === 'all' ? 'All Modules' : m }))}
-          className="h-9 px-3 bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg font-sans focus:outline-none focus:ring-2 focus:ring-blue-500/40 shrink-0"
-        />
-
-        {/* Status dropdown */}
-        <Select
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-          options={[
-            { value: 'all', label: 'All Statuses' },
-            { value: 'success', label: '✓ Success' },
-            { value: 'failure', label: '✗ Failed' },
-          ]}
-          className="h-9 px-3 bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg font-sans focus:outline-none focus:ring-2 focus:ring-blue-500/40 shrink-0"
-        />
-
-        {/* Time range dropdown */}
-        <Select
-          value={dateRange}
-          onChange={e => setDateRange(e.target.value)}
-          options={[
-            { value: 'all', label: 'All Time' },
-            { value: 'today', label: 'Today' },
-            { value: '7d', label: 'Last 7 days' },
-            { value: '30d', label: 'Last 30 days' },
-            { value: '90d', label: 'Last 90 days' },
-          ]}
-          className="h-9 px-3 bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg font-sans focus:outline-none focus:ring-2 focus:ring-blue-500/40 shrink-0"
-        />
+        {/* Filters group — always horizontal, never wrap individually */}
+        <div className="flex items-center gap-2 shrink-0">
+          <Select
+            value={moduleFilter}
+            onChange={e => setModuleFilter(e.target.value)}
+            options={MODULES.map(m => ({ value: m, label: m === 'all' ? 'All Modules' : m }))}
+            className="h-9 px-3 bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg font-sans focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+          />
+          <Select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+            options={[
+              { value: 'all', label: 'All Statuses' },
+              { value: 'success', label: '✓ Success' },
+              { value: 'failure', label: '✗ Failed' },
+            ]}
+            className="h-9 px-3 bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg font-sans focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+          />
+          <Select
+            value={dateRange}
+            onChange={e => setDateRange(e.target.value)}
+            options={[
+              { value: 'all', label: 'All Time' },
+              { value: 'today', label: 'Today' },
+              { value: '7d', label: 'Last 7 days' },
+              { value: '30d', label: 'Last 30 days' },
+              { value: '90d', label: 'Last 90 days' },
+            ]}
+            className="h-9 px-3 bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg font-sans focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+          />
+        </div>
 
         {/* Right actions — separator + icon buttons */}
         <div className="hidden sm:block w-px h-5 bg-gray-200 dark:bg-gray-700 shrink-0" />
