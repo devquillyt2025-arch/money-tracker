@@ -14,6 +14,7 @@ import {
   Printer
 } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ScatterChart, Scatter, ZAxis } from 'recharts';
+import Select from '../Select';
 
 interface AnalyticsViewProps {
   entries: Entry[];
@@ -353,20 +354,17 @@ export default function AnalyticsView({ entries, bills = [] }: AnalyticsViewProp
           </h1>
         </div>
         <div className="flex items-center gap-3">
-          <select 
+          <Select 
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            className="print:hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-50 text-sm rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-sans font-medium"
-          >
-            {availableMonths.map(month => {
+            options={availableMonths.map(month => {
               const [y, m] = month.split('-');
               const date = new Date(parseInt(y), parseInt(m) - 1);
               const label = date.toLocaleString('default', { month: 'long', year: 'numeric' });
-              return (
-                <option key={month} value={month}>{label}</option>
-              );
+              return { value: month, label };
             })}
-          </select>
+            className="print:hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-50 text-sm rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-sans font-medium"
+          />
           <button 
             onClick={() => window.print()}
             className="print:hidden flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 dark:bg-gray-50 dark:hover:bg-gray-200 text-white dark:text-gray-900 rounded-xl font-sans text-sm font-medium transition-colors"

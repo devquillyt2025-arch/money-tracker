@@ -14,6 +14,7 @@ import {
   X,
   Check
 } from 'lucide-react';
+import Select from '../Select';
 
 interface AuxiliaryGoal {
   id: string;
@@ -610,16 +611,15 @@ export default function GoalsView({
                 <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
                   Destination Fund
                 </label>
-                <select
+                <Select
                   value={contribType}
                   onChange={(e) => setContribType(e.target.value)}
+                  options={[
+                    { value: 'primary', label: `Primary: ${primaryGoal.name} (₹${primaryGoal.currentAmount.toLocaleString('en-IN')})` },
+                    ...auxGoals.map(g => ({ value: g.id, label: `${g.name} (₹${g.currentAmount.toLocaleString('en-IN')})` })),
+                  ]}
                   className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl text-sm text-gray-900 dark:text-gray-50 outline-none transition-all"
-                >
-                  <option value="primary">Primary: {primaryGoal.name} (₹{primaryGoal.currentAmount.toLocaleString('en-IN')})</option>
-                  {auxGoals.map(g => (
-                    <option key={g.id} value={g.id}>{g.name} (₹{g.currentAmount.toLocaleString('en-IN')})</option>
-                  ))}
-                </select>
+                />
               </div>
 
               <div>
@@ -724,16 +724,17 @@ export default function GoalsView({
                   <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
                     Category
                   </label>
-                  <select
+                  <Select
                     value={auxCategory}
                     onChange={(e) => setAuxCategory(e.target.value)}
+                    options={[
+                      { value: 'Assets', label: 'Assets' },
+                      { value: 'Safety', label: 'Safety/Emergency' },
+                      { value: 'Equipment', label: 'Equipment' },
+                      { value: 'Travel', label: 'Travel' },
+                    ]}
                     className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl font-sans text-sm text-gray-900 dark:text-gray-50 outline-none transition-all"
-                  >
-                    <option value="Assets">Assets</option>
-                    <option value="Safety">Safety/Emergency</option>
-                    <option value="Equipment">Equipment</option>
-                    <option value="Travel">Travel</option>
-                  </select>
+                  />
                 </div>
                 <div>
                   <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">

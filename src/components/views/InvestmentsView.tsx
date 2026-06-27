@@ -13,6 +13,7 @@ import {
   PlusCircle,
   X
 } from 'lucide-react';
+import Select from '../Select';
 
 interface InvestmentHolding {
   id: string;
@@ -431,17 +432,18 @@ export default function InvestmentsView({
                 <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
                   Asset Class Classification
                 </label>
-                <select
+                <Select
                   value={formCategory}
                   onChange={(e) => setFormCategory(e.target.value as any)}
+                  options={[
+                    { value: 'Equity', label: 'Direct Shares / Equity' },
+                    { value: 'Mutual Fund', label: 'Mutual Fund Portfolio' },
+                    { value: 'Gold/Commodities', label: 'Commodities / Physical Gold' },
+                    { value: 'Govt Debt', label: 'Government Bonds / Fixed Yield' },
+                    { value: 'Cash Equivalent', label: 'Cash / Liquid Reserves' },
+                  ]}
                   className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl text-sm text-gray-900 dark:text-gray-50 outline-none transition-all"
-                >
-                  <option value="Equity">Direct Shares / Equity</option>
-                  <option value="Mutual Fund">Mutual Fund Portfolio</option>
-                  <option value="Gold/Commodities">Commodities / Physical Gold</option>
-                  <option value="Govt Debt">Government Bonds / Fixed Yield</option>
-                  <option value="Cash Equivalent">Cash / Liquid Reserves</option>
-                </select>
+                />
               </div>
 
               {/* Invested and Current value */}

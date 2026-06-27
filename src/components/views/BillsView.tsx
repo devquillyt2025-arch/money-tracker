@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Bill, RecurrenceFrequency } from '../../types';
 import { FileText, Plus, Trash2, CheckCircle, Circle, Edit2 } from 'lucide-react';
+import Select from '../Select';
 
 interface BillsViewProps {
   bills: Bill[];
@@ -208,18 +209,19 @@ export default function BillsView({ bills, onAddBill, onUpdateBill, onDeleteBill
               </div>
               <div>
                 <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Cycle</label>
-                <select
+                <Select
                   value={formCycle}
                   onChange={e => setFormCycle(e.target.value as any)}
+                  options={[
+                    { value: 'monthly', label: 'Monthly' },
+                    { value: 'yearly', label: 'Yearly' },
+                  ]}
                   className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl font-sans text-sm text-gray-900 dark:text-gray-50 outline-none transition-all"
-                >
-                  <option value="monthly">Monthly</option>
-                  <option value="yearly">Yearly</option>
-                </select>
+                />
               </div>
               <div>
                 <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Category</label>
-                <select
+                <Select
                   value={formCategory}
                   onChange={e => {
                     setFormCategory(e.target.value);
@@ -227,13 +229,12 @@ export default function BillsView({ bills, onAddBill, onUpdateBill, onDeleteBill
                       setCustomCategory('');
                     }
                   }}
+                  options={[
+                    ...Array.from(new Set(['Bills & Subscription', 'Housing', 'Utilities', 'Internet', 'Entertainment', ...bills.map(b => b.category).filter(Boolean)])).map(cat => ({ value: cat, label: cat })),
+                    { value: 'CUSTOM', label: '+ Add Custom Category...' },
+                  ]}
                   className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl font-sans text-sm text-gray-900 dark:text-gray-50 outline-none transition-all"
-                >
-                  {Array.from(new Set(['Bills & Subscription', 'Housing', 'Utilities', 'Internet', 'Entertainment', ...bills.map(b => b.category).filter(Boolean)])).map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                  <option value="CUSTOM">+ Add Custom Category...</option>
-                </select>
+                />
                 {formCategory === 'CUSTOM' && (
                   <input
                     type="text"

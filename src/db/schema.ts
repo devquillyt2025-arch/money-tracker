@@ -80,4 +80,10 @@ export const accounts = pgTable('accounts', {
   status: varchar('status', { length: 50 }).default('active'),
   currency: text('currency').default('INR'),
   balanceUpdatedAt: timestamp('balance_updated_at').defaultNow(),
+  nickname: varchar('nickname', { length: 255 }),
+  branchName: varchar('branch_name', { length: 255 }),
+  purpose: varchar('purpose', { length: 255 }),
+  isDefault: boolean('is_default').default(false),
+  notes: text('notes'),
+  vaultLink: text('vault_link'),
 });

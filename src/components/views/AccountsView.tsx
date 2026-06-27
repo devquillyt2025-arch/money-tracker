@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Landmark, Wallet, DollarSign, ListFilter, Check, Star, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Account, Entry } from '../../types';
+import Select from '../Select';
 
 interface AccountsViewProps {
   accounts: Account[];
@@ -253,30 +254,30 @@ export default function AccountsView({
                 
                 <div className="p-4 border-b border-gray-100 dark:border-gray-800">
                   <h3 className="font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Filter by Type</h3>
-                  <select
+                  <Select
                     value={filterType}
                     onChange={(e) => setFilterType(e.target.value)}
+                    options={[
+                      { value: 'all', label: 'All Types' },
+                      ...accountTypes.map(type => ({ value: type, label: type.charAt(0).toUpperCase() + type.slice(1) })),
+                    ]}
                     className="w-full font-sans text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                  >
-                    <option value="all">All Types</option>
-                    {accountTypes.map(type => (
-                      <option key={type} value={type} className="capitalize">{type}</option>
-                    ))}
-                  </select>
+                  />
                 </div>
 
                 <div className="p-4">
                   <h3 className="font-sans text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Filter by Status</h3>
-                  <select
+                  <Select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
+                    options={[
+                      { value: 'all', label: 'All Statuses' },
+                      { value: 'active', label: 'Active' },
+                      { value: 'inactive', label: 'Inactive' },
+                      { value: 'closed', label: 'Closed' },
+                    ]}
                     className="w-full font-sans text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                  >
-                    <option value="all">All Statuses</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="closed">Closed</option>
-                  </select>
+                  />
                 </div>
               </div>
             )}
@@ -466,18 +467,19 @@ export default function AccountsView({
                   {/* Row 2: Type | Balance (₹) */}
                   <div>
                     <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Type</label>
-                    <select
+                    <Select
                       value={formType}
                       onChange={e => setFormType(e.target.value)}
+                      options={[
+                        { value: 'checking', label: 'Checking' },
+                        { value: 'savings', label: 'Savings' },
+                        { value: 'credit', label: 'Credit Card' },
+                        { value: 'cash', label: 'Cash' },
+                        { value: 'investment', label: 'Investment' },
+                        { value: 'other', label: 'Other' },
+                      ]}
                       className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-50 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-sans font-medium"
-                    >
-                      <option value="checking">Checking</option>
-                      <option value="savings">Savings</option>
-                      <option value="credit">Credit Card</option>
-                      <option value="cash">Cash</option>
-                      <option value="investment">Investment</option>
-                      <option value="other">Other</option>
-                    </select>
+                    />
                   </div>
                   <div>
                     <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Balance (₹)</label>
@@ -530,15 +532,16 @@ export default function AccountsView({
                   {editingAccountId && (
                     <div className="col-span-1 sm:col-span-2">
                       <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Status</label>
-                      <select
+                      <Select
                         value={formStatus}
                         onChange={e => setFormStatus(e.target.value as any)}
+                        options={[
+                          { value: 'active', label: 'Active' },
+                          { value: 'inactive', label: 'Inactive' },
+                          { value: 'closed', label: 'Closed' },
+                        ]}
                         className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-50 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-sans font-medium"
-                      >
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                        <option value="closed">Closed</option>
-                      </select>
+                      />
                     </div>
                   )}
                 </div>
@@ -559,18 +562,19 @@ export default function AccountsView({
                       {/* Account Purpose Tag | Branch Name (Optional) */}
                       <div>
                         <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Account Purpose Tag</label>
-                        <select
+                        <Select
                           value={formPurpose}
                           onChange={e => setFormPurpose(e.target.value)}
+                          options={[
+                            { value: '', label: 'Select Purpose...' },
+                            { value: 'Primary', label: 'Primary' },
+                            { value: 'Emergency Fund', label: 'Emergency Fund' },
+                            { value: 'Business', label: 'Business' },
+                            { value: 'Joint', label: 'Joint' },
+                            { value: 'Other', label: 'Other' },
+                          ]}
                           className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-50 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-sans font-medium"
-                        >
-                          <option value="">Select Purpose...</option>
-                          <option value="Primary">Primary</option>
-                          <option value="Emergency Fund">Emergency Fund</option>
-                          <option value="Business">Business</option>
-                          <option value="Joint">Joint</option>
-                          <option value="Other">Other</option>
-                        </select>
+                        />
                       </div>
                       <div>
                         <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Branch Name (Optional)</label>

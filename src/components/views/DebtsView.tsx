@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Check, ArrowRight, Trash2, Edit2 } from 'lucide-react';
 import { Debt, Entry, PaymentHistory } from '../../types';
+import Select from '../Select';
 
 interface DebtsViewProps {
   debts: Debt[];
@@ -460,7 +461,7 @@ export default function DebtsView({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">Type</label>
-                  <select
+                  <Select
                     value={formType}
                     onChange={e => {
                       setFormType(e.target.value);
@@ -468,13 +469,12 @@ export default function DebtsView({
                         setCustomType('');
                       }
                     }}
+                    options={[
+                      ...Array.from(new Set(['Home Loan', 'Car Loan', 'Two-Wheeler Loan', 'Personal Loan', 'Education Loan', 'Credit Card', 'Gold Loan', 'Business Loan', ...debts.map(d => d.type).filter(Boolean)])).map(type => ({ value: type, label: type.replace(/_/g, ' ') })),
+                      { value: 'custom', label: 'Custom...' },
+                    ]}
                     className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-50 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-sans font-medium"
-                  >
-                    {Array.from(new Set(['Home Loan', 'Car Loan', 'Two-Wheeler Loan', 'Personal Loan', 'Education Loan', 'Credit Card', 'Gold Loan', 'Business Loan', ...debts.map(d => d.type).filter(Boolean)])).map(type => (
-                      <option key={type} value={type}>{type.replace(/_/g, ' ')}</option>
-                    ))}
-                    <option value="custom">Custom...</option>
-                  </select>
+                  />
                   {formType === 'custom' && (
                     <input
                       type="text"

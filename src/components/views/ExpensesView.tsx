@@ -17,6 +17,7 @@ import {
   PlusCircle,
   FileText
 } from 'lucide-react';
+import Select from '../Select';
 
 interface ExpensesViewProps {
   entries: Entry[];
@@ -415,30 +416,30 @@ export default function ExpensesView({
         {/* Category Filter */}
         <div className="flex items-center gap-2">
           <span className="font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium shrink-0">Cat:</span>
-          <select
+          <Select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
+            options={[
+              { value: 'ALL', label: 'All Categories' },
+              ...dynamicCategories.map(cat => ({ value: cat, label: cat })),
+            ]}
             className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl font-sans text-sm text-gray-900 dark:text-gray-50 outline-none transition-all"
-          >
-            <option value="ALL">All Categories</option>
-            {dynamicCategories.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
+          />
         </div>
 
         {/* Type Filter */}
         <div className="flex items-center gap-2">
           <span className="font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium shrink-0">Type:</span>
-          <select
+          <Select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
+            options={[
+              { value: 'ALL', label: 'All Flows' },
+              { value: 'income', label: 'Income (+)' },
+              { value: 'expense', label: 'Expense (-)' },
+            ]}
             className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl font-sans text-sm text-gray-900 dark:text-gray-50 outline-none transition-all"
-          >
-            <option value="ALL">All Flows</option>
-            <option value="income">Income (+)</option>
-            <option value="expense">Expense (-)</option>
-          </select>
+          />
         </div>
       </div>
 
@@ -747,7 +748,7 @@ export default function ExpensesView({
                   <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
                     Category
                   </label>
-                  <select
+                  <Select
                     value={formCategory}
                     onChange={(e) => {
                       setFormCategory(e.target.value);
@@ -755,13 +756,12 @@ export default function ExpensesView({
                         setCustomCategory('');
                       }
                     }}
+                    options={[
+                      ...dynamicCategories.map(cat => ({ value: cat, label: cat })),
+                      { value: 'CUSTOM', label: '+ Add Custom Category...' },
+                    ]}
                     className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl font-sans text-sm text-gray-900 dark:text-gray-50 outline-none transition-all"
-                  >
-                    {dynamicCategories.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                    <option value="CUSTOM">+ Add Custom Category...</option>
-                  </select>
+                  />
                   {formCategory === 'CUSTOM' && (
                     <input
                       type="text"
@@ -892,7 +892,7 @@ export default function ExpensesView({
                   <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
                     Category
                   </label>
-                  <select
+                  <Select
                     value={formCategory}
                     onChange={(e) => {
                       setFormCategory(e.target.value);
@@ -900,13 +900,12 @@ export default function ExpensesView({
                         setCustomCategory('');
                       }
                     }}
+                    options={[
+                      ...dynamicCategories.map(cat => ({ value: cat, label: cat })),
+                      { value: 'CUSTOM', label: '+ Add Custom Category...' },
+                    ]}
                     className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl font-sans text-sm text-gray-900 dark:text-gray-50 outline-none transition-all"
-                  >
-                    {dynamicCategories.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                    <option value="CUSTOM">+ Add Custom Category...</option>
-                  </select>
+                  />
                   {formCategory === 'CUSTOM' && (
                     <input
                       type="text"

@@ -16,6 +16,7 @@ import {
   Sparkles,
   Loader2
 } from 'lucide-react';
+import Select from '../Select';
 
 interface DashboardViewProps {
   entries: Entry[];
@@ -311,20 +312,17 @@ Keep the insight to one concise, direct sentence.`;
           </h1>
         </div>
         <div className="flex items-center gap-3">
-          <select 
+          <Select 
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            className="print:hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-50 text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-sans font-medium"
-          >
-            {availableMonths.map(month => {
+            options={availableMonths.map(month => {
               const [y, m] = month.split('-');
               const date = new Date(parseInt(y), parseInt(m) - 1);
               const label = date.toLocaleString('default', { month: 'short', year: 'numeric' });
-              return (
-                <option key={month} value={month}>{label}</option>
-              );
+              return { value: month, label };
             })}
-          </select>
+            className="print:hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-50 text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-sans font-medium"
+          />
           <div className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg font-sans text-[11px] text-gray-500 dark:text-gray-400 dark:text-gray-500 shadow-sm">
             <Calendar size={12} className="text-blue-600" />
             <span>{getFormattedDate()}</span>
