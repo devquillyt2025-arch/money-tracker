@@ -108,6 +108,77 @@ export default function DashboardView({
 
   const currentInvestments = totalInvestments;
 
+  // Previous Month Calculations for Delta Indicators
+  const prevMonthPrefix = useMemo(() => {
+    if (!selectedMonth) return "";
+    const [yearStr, monthStr] = selectedMonth.split('-');
+    let y = parseInt(yearStr, 10);
+    let m = parseInt(monthStr, 10);
+    m -= 1;
+    if (m <= 0) {
+      m += 12;
+      y -= 1;
+    }
+    return `${y}-${m.toString().padStart(2, '0')}`;
+  }, [selectedMonth]);
+
+  const prevMonthlyExpenses = useMemo(() => {
+    const prevEntriesExpense = entries
+      .filter(e => e.type === 'expense' && e.date.startsWith(prevMonthPrefix))
+      .reduce((sum, e) => sum + (e.amount || 0), 0);
+    const hasPrevEntries = entries.some(e => e.date.startsWith(prevMonthPrefix));
+    return prevEntriesExpense + (hasPrevEntries ? totalBills : 0);
+  }, [entries, prevMonthPrefix, totalBills]);
+
+  const prevInvestments = useMemo(() => {
+    return holdings.reduce((sum, h) => sum + (h.investedAmount || 0), 0);
+  }, [holdings]);
+
+  const prevNetWorth = useMemo(() => {
+    const prevDebts = debts
+      .filter(d => d.remainingAmount > 0)
+      .reduce((sum, d) => sum + (d.remainingAmount + (d.emi || 0)), 0);
+    return totalAccountsBalance + prevInvestments - prevDebts;
+  }, [debts, totalAccountsBalance, prevInvestments]);
+
+  const renderDeltaIndicator = (current: number, prev: number, metricType: 'netWorth' | 'spend' | 'investments') => {
+    if (current === prev) {
+      return (
+        <span className="font-sans text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 font-medium">
+          No change
+        </span>
+      );
+    }
+
+    const isIncrease = current > prev;
+    
+    // Determine color based on metric type
+    let isGood = isIncrease;
+    if (metricType === 'spend') {
+      isGood = !isIncrease; // For spending, decrease is good, increase is bad
+    }
+
+    const colorClass = isGood ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400";
+    const Icon = isIncrease ? ArrowUpRight : ArrowDownRight;
+
+    if (prev === 0) {
+      return (
+        <span className={`font-sans text-xs ${colorClass} flex items-center gap-1 font-medium`}>
+          <Icon size={14} /> New
+        </span>
+      );
+    }
+
+    const percentage = ((current - prev) / Math.abs(prev)) * 100;
+    const sign = isIncrease ? "+" : "";
+
+    return (
+      <span className={`font-sans text-xs ${colorClass} flex items-center gap-1 font-medium`}>
+        <Icon size={14} /> {sign}{percentage.toFixed(1)}% vs last month
+      </span>
+    );
+  };
+
   const currentMonthExpensesByCategory: Record<string, number> = {};
   entries
     .filter(e => e.type === 'expense' && e.date.startsWith(currentMonthPrefix))
@@ -344,9 +415,7 @@ Keep the insight to one concise, direct sentence.`;
             <span className="font-sans text-2xl font-bold text-gray-900 dark:text-gray-50">
               ₹{calculatedNetWorth.toLocaleString('en-IN')}
             </span>
-            <span className="font-sans text-xs text-green-600 dark:text-green-400 flex items-center gap-1 font-medium">
-              <ArrowUpRight size={14} /> +12.4% vs last month
-            </span>
+            {renderDeltaIndicator(calculatedNetWorth, prevNetWorth, 'netWorth')}
           </div>
           
           {/* Tooltip Breakdown */}
@@ -370,9 +439,7 @@ Keep the insight to one concise, direct sentence.`;
             <span className="font-sans text-2xl font-bold text-gray-900 dark:text-gray-50">
               ₹{monthlyExpenses.toLocaleString('en-IN')}
             </span>
-            <span className="font-sans text-xs text-red-500 flex items-center gap-1 font-medium">
-              <ArrowDownRight size={14} /> +4.2% vs last month
-            </span>
+            {renderDeltaIndicator(monthlyExpenses, prevMonthlyExpenses, 'spend')}
           </div>
         </div>
 
@@ -385,9 +452,7 @@ Keep the insight to one concise, direct sentence.`;
             <span className="font-sans text-2xl font-bold text-gray-900 dark:text-gray-50">
               ₹{currentInvestments.toLocaleString('en-IN')}
             </span>
-            <span className="font-sans text-xs text-green-600 dark:text-green-400 flex items-center gap-1 font-medium">
-              <TrendingUp size={14} /> +8.1% vs last month
-            </span>
+            {renderDeltaIndicator(currentInvestments, prevInvestments, 'investments')}
           </div>
         </div>
 

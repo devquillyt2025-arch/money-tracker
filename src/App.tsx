@@ -204,6 +204,10 @@ export default function App() {
     }
   };
 
+  const handleAddEntries = (newEntries: Entry[]) => {
+    setEntries(prev => [...newEntries, ...prev]);
+  };
+
   const handleEditEntry = async (id: string, updated: Partial<Entry>) => {
     try {
       const updatedEntry = await api.updateEntry(id, updated);
@@ -448,6 +452,7 @@ export default function App() {
           <ExpensesView
             entries={filteredEntries}
             onAddEntry={handleAddEntry}
+            onAddEntries={handleAddEntries}
             onEditEntry={handleEditEntry}
             onDeleteEntry={handleDeleteEntry}
             isAddModalOpen={isAddModalOpen}

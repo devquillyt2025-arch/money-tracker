@@ -186,12 +186,32 @@ export const api = {
       body: JSON.stringify({ prompt }),
     });
     if (!res.ok) {
+      const text = await res.text();
       let errorMessage = "Failed to fetch insights";
       try {
-        const errorData = await res.json();
-        errorMessage = errorData.error || errorMessage;
-      } catch (e) {
-        errorMessage = await res.text();
+        errorMessage = JSON.parse(text).error || errorMessage;
+      } catch {
+        errorMessage = text || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+    return res.json();
+  },
+
+  parseStatement: async (payload: { pdfData?: string; transactions?: any[] }) => {
+    const res = await fetch("/api/parse-statement", {
+      method: "POST",
+      headers: await getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      let errorMessage = `HTTP ${res.status}: `;
+      try {
+        const json = JSON.parse(text);
+        errorMessage += json.error || json.message || json.err || JSON.stringify(json);
+      } catch {
+        errorMessage += text ? text : "Empty response body (possible 413 Payload Too Large or server error)";
       }
       throw new Error(errorMessage);
     }

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Entry, EntryType } from '../../types';
 import { DEFAULT_CATEGORIES } from '../../initialData';
+import { api } from '../../lib/api';
+import { detectAndParseStatement, loadPdfJs } from '../../lib/spendLensParser';
 import { 
   Search, 
   Filter, 
@@ -19,6 +21,7 @@ import {
 interface ExpensesViewProps {
   entries: Entry[];
   onAddEntry: (entry: Omit<Entry, 'id'>) => void;
+  onAddEntries?: (entries: Entry[]) => void;
   onEditEntry: (id: string, updated: Partial<Entry>) => void;
   onDeleteEntry: (id: string) => void;
   isAddModalOpen: boolean;
@@ -31,6 +34,7 @@ type SortOrder = 'asc' | 'desc';
 export default function ExpensesView({
   entries,
   onAddEntry,
+  onAddEntries,
   onEditEntry,
   onDeleteEntry,
   isAddModalOpen,
@@ -216,6 +220,116 @@ export default function ExpensesView({
     setIsAddModalOpen(true);
   };
 
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const [uploadSuccess, setUploadSuccess] = useState('');
+  const [pendingPdfBuffer, setPendingPdfBuffer] = useState<ArrayBuffer | null>(null);
+  const [isPasswordPromptOpen, setIsPasswordPromptOpen] = useState(false);
+  const [pdfPassword, setPdfPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setIsUploading(true);
+    setUploadError('');
+    setUploadSuccess('');
+    setPasswordError('');
+    setPdfPassword('');
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const arrayBuffer = reader.result as ArrayBuffer;
+        // Save a pristine copy immediately so it's ready for password retries without detachment
+        setPendingPdfBuffer(arrayBuffer.slice(0));
+        
+        const pdfjsLib = await loadPdfJs();
+        
+        try {
+          // Pass a slice so the original buffer isn't detached by Web Worker postMessage
+          const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer.slice(0) });
+          const pdf = await loadingTask.promise;
+          setPendingPdfBuffer(null);
+          await processUnlockedPdf(pdf);
+        } catch (pdfErr: any) {
+          if (pdfErr?.name === 'PasswordException' || pdfErr?.message?.includes('password') || pdfErr?.message?.includes('No password given')) {
+            setIsPasswordPromptOpen(true);
+            setIsUploading(false);
+            if (e.target) e.target.value = '';
+            return;
+          }
+          throw pdfErr;
+        }
+      } catch (err: any) {
+        setUploadError(err.message || 'Failed to upload and parse statement');
+        setIsUploading(false);
+      } finally {
+        if (e.target) e.target.value = '';
+      }
+    };
+    reader.onerror = () => {
+      setUploadError('Failed to read file');
+      setIsUploading(false);
+      if (e.target) e.target.value = '';
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  const processUnlockedPdf = async (pdf: any) => {
+    let text = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const p = await pdf.getPage(i);
+      const c = await p.getTextContent();
+      text += c.items.map((x: any) => x.str).join(' ') + '\n';
+    }
+
+    if (text.trim().length < 200) {
+      throw new Error('This PDF has no extractable text — it appears to be a scanned image.');
+    }
+
+    const transactions = detectAndParseStatement(text);
+    if (transactions.length === 0) {
+      throw new Error('No transactions could be parsed from this statement.');
+    }
+
+    const result = await api.parseStatement({ transactions });
+    if (result && result.entries) {
+      onAddEntries?.(result.entries);
+      setUploadSuccess(`Successfully imported ${result.entries.length} transactions from statement!`);
+      setTimeout(() => setUploadSuccess(''), 7000);
+    }
+    setIsUploading(false);
+  };
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pendingPdfBuffer) return;
+    
+    setIsUploading(true);
+    setPasswordError('');
+
+    try {
+      const pdfjsLib = await loadPdfJs();
+      // Pass a slice of pendingPdfBuffer so if password is wrong, pendingPdfBuffer remains intact for the next attempt
+      const loadingTask = pdfjsLib.getDocument({ data: pendingPdfBuffer.slice(0), password: pdfPassword });
+      const pdf = await loadingTask.promise;
+      
+      setIsPasswordPromptOpen(false);
+      setPendingPdfBuffer(null);
+      setPdfPassword('');
+      await processUnlockedPdf(pdf);
+    } catch (err: any) {
+      setIsUploading(false);
+      if (err?.name === 'PasswordException' || err?.message?.includes('password')) {
+        setPasswordError('Incorrect password. Please try again.');
+      } else {
+        setPasswordError(err.message || 'Failed to parse encrypted PDF.');
+      }
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* 1. HEADER & ACTION ROW */}
@@ -228,13 +342,44 @@ export default function ExpensesView({
             Transaction Feeds
           </h1>
         </div>
-        <button
-          onClick={openAddModal}
-          className="flex items-center gap-2 text-sm font-sans text-white bg-blue-600 hover:bg-blue-700 shadow-sm font-medium px-4 py-2 rounded-xl transition-colors"
-        >
-          <Plus size={16} /> Record Flow
-        </button>
+        <div className="flex items-center gap-3">
+          <label className={`flex items-center gap-2 text-sm font-sans text-white bg-purple-600 hover:bg-purple-700 shadow-sm font-medium px-4 py-2 rounded-xl transition-colors cursor-pointer ${isUploading ? 'opacity-60 pointer-events-none' : ''}`}>
+            <FileText size={16} />
+            {isUploading ? 'Parsing Statement...' : 'Upload PhonePe Statement'}
+            <input 
+              type="file" 
+              accept="application/pdf" 
+              className="hidden" 
+              onChange={handleFileUpload}
+              disabled={isUploading} 
+            />
+          </label>
+          <button
+            onClick={openAddModal}
+            className="flex items-center gap-2 text-sm font-sans text-white bg-blue-600 hover:bg-blue-700 shadow-sm font-medium px-4 py-2 rounded-xl transition-colors"
+          >
+            <Plus size={16} /> Record Flow
+          </button>
+        </div>
       </div>
+
+      {uploadError && (
+        <div className="p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-2xl flex items-center justify-between text-red-600 dark:text-red-400 text-sm font-sans">
+          <span>{uploadError}</span>
+          <button onClick={() => setUploadError('')} className="p-1 hover:bg-red-100 dark:hover:bg-red-800 rounded-lg">
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      {uploadSuccess && (
+        <div className="p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-2xl flex items-center justify-between text-green-600 dark:text-green-400 text-sm font-sans font-medium">
+          <span>{uploadSuccess}</span>
+          <button onClick={() => setUploadSuccess('')} className="p-1 hover:bg-green-100 dark:hover:bg-green-800 rounded-lg">
+            <X size={16} />
+          </button>
+        </div>
+      )}
 
       {/* 2. SEARCH & CONTROLS */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm rounded-2xl">
@@ -678,6 +823,85 @@ export default function ExpensesView({
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-sans font-semibold text-sm rounded-xl transition-colors shadow-sm"
                 >
                   Update Record
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 4. PASSWORD PROMPT MODAL */}
+      {isPasswordPromptOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex justify-between items-center px-5 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-xl border border-purple-100 dark:border-purple-800">
+                  <FileText size={18} />
+                </div>
+                <div>
+                  <h3 className="font-sans font-semibold text-base text-gray-900 dark:text-gray-50">
+                    Password Protected PDF
+                  </h3>
+                  <p className="font-sans text-xs text-gray-500 dark:text-gray-400">
+                    Enter the password to decrypt your statement
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsPasswordPromptOpen(false);
+                  setPendingPdfBuffer(null);
+                  setPdfPassword('');
+                  setPasswordError('');
+                }}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handlePasswordSubmit} className="p-5 space-y-5">
+              {passwordError && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-xs text-red-600 dark:text-red-400 font-medium">
+                  {passwordError}
+                </div>
+              )}
+
+              <div>
+                <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
+                  Document Password
+                </label>
+                <input
+                  type="password"
+                  autoFocus
+                  placeholder="Enter PDF password..."
+                  value={pdfPassword}
+                  onChange={(e) => setPdfPassword(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 focus:border-purple-600 focus:ring-1 focus:ring-purple-600 rounded-xl font-sans text-sm text-gray-900 dark:text-gray-50 outline-none transition-all"
+                />
+              </div>
+
+              <div className="pt-3 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPasswordPromptOpen(false);
+                    setPendingPdfBuffer(null);
+                    setPdfPassword('');
+                    setPasswordError('');
+                  }}
+                  className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-sans font-medium text-gray-700 dark:text-gray-200 rounded-xl transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUploading}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-sans font-semibold text-sm rounded-xl transition-colors shadow-sm disabled:opacity-60"
+                >
+                  {isUploading ? 'Decrypting...' : 'Unlock & Parse'}
                 </button>
               </div>
             </form>

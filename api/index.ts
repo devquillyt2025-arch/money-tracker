@@ -158,7 +158,7 @@ const requireAuth = async (req: AuthRequest, res: Response, next: NextFunction) 
 
 // ── Express app ───────────────────────────────────────────────────────────────
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
 
 app.get("/api/health", async (_req, res) => {
   const status: Record<string, any> = {
@@ -368,6 +368,107 @@ app.put("/api/users/profile", requireAuth, async (req: AuthRequest, res) => {
     const item = await db.update(users).set(req.body).where(eq(users.id, req.user!.uid)).returning();
     res.json(item[0]);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post("/api/parse-statement", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const { pdfData, transactions } = req.body;
+
+    if (transactions && Array.isArray(transactions)) {
+      const createdEntries = [];
+      for (const tx of transactions) {
+        const item = await db.insert(entries).values({
+          id: crypto.randomUUID(),
+          userId: req.user!.uid,
+          name: tx.name || "PhonePe Transaction",
+          category: tx.category || "Miscellaneous",
+          amount: Math.round(Number(tx.amount) || 0),
+          type: tx.type === "income" ? "income" : "expense",
+          date: tx.date || new Date().toISOString().split('T')[0],
+        }).returning();
+        createdEntries.push(item[0]);
+      }
+      return res.json({ success: true, count: createdEntries.length, entries: createdEntries });
+    }
+
+    if (!ai) return res.status(503).json({ error: "AI service not configured." });
+    if (!pdfData) return res.status(400).json({ error: "No PDF data provided." });
+
+    const prompt = `You are a financial AI assistant. Parse this PhonePe bank statement. Extract all transactions. For each transaction, provide:
+- name: merchant or clean transaction description
+- amount: positive integer representing the amount
+- type: 'income' or 'expense'
+- category: choose the closest match from ['Food & Grocery', 'Shopping', 'Travel', 'Bills & Subscription', 'Investment', 'Miscellaneous']
+- date: YYYY-MM-DD format
+
+Return ONLY a JSON object with a 'transactions' array containing these objects. Do not include markdown code blocks or any other text.`;
+
+    const contents = [
+      {
+        role: "user",
+        parts: [
+          {
+            inlineData: {
+              mimeType: "application/pdf",
+              data: pdfData
+            }
+          },
+          { text: prompt }
+        ]
+      }
+    ];
+
+    let response;
+    try {
+      response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents,
+        config: { responseMimeType: "application/json" }
+      });
+    } catch (e: any) {
+      console.error("gemini-3.5-flash error:", e?.error || e);
+      if (e?.status === 503 || e?.error?.status === "UNAVAILABLE" || e?.error?.code === 429 || e?.status === 429 || e?.status === 404 || e?.error?.code === 404) {
+        response = await ai.models.generateContent({
+          model: "gemini-3.1-flash-lite",
+          contents,
+          config: { responseMimeType: "application/json" }
+        });
+      } else { throw e; }
+    }
+
+    const textContent = response.text;
+    if (!textContent) throw new Error("No text returned from AI model.");
+
+    let parsed;
+    try {
+      parsed = JSON.parse(textContent);
+    } catch (err) {
+      const cleaned = textContent.replace(/```json/g, '').replace(/```/g, '').trim();
+      parsed = JSON.parse(cleaned);
+    }
+
+    const txs = parsed.transactions || [];
+    const createdEntries = [];
+
+    for (const tx of txs) {
+      const item = await db.insert(entries).values({
+        id: crypto.randomUUID(),
+        userId: req.user!.uid,
+        name: tx.name || "PhonePe Transaction",
+        category: tx.category || "Miscellaneous",
+        amount: Math.round(Number(tx.amount) || 0),
+        type: tx.type === "income" ? "income" : "expense",
+        date: tx.date || new Date().toISOString().split('T')[0],
+      }).returning();
+      createdEntries.push(item[0]);
+    }
+
+    res.json({ success: true, count: createdEntries.length, entries: createdEntries });
+  } catch (e: any) {
+    console.error("Statement parsing error:", e?.error || e);
+    const errDetail = e instanceof Error ? `${e.name}: ${e.message} ${JSON.stringify(e)}` : JSON.stringify(e);
+    res.status(500).json({ error: `Backend API Error: ${errDetail}` });
+  }
 });
 
 export default app;
