@@ -80,21 +80,19 @@ export default function AccountsView({
     return acc;
   }, 0);
 
-  const bankBalances = processedAccounts.reduce((acc, account) => {
-    const bal = account.availableBalance ?? account.balance;
-    if (bal > 0) {
-      acc[account.name] = (acc[account.name] || 0) + bal;
-    }
-    return acc;
-  }, {} as Record<string, number>);
+  const positiveAccounts = processedAccounts.filter(a => (a.availableBalance ?? a.balance) > 0);
   
-  const totalPositiveBalance = Object.values(bankBalances).reduce((sum, val) => sum + val, 0);
-  const bankSegments = Object.entries(bankBalances)
-    .sort((a, b) => b[1] - a[1])
-    .map(([name, bal]) => ({
-      name,
-      percentage: (bal / totalPositiveBalance) * 100
-    }));
+  const bankSegments = positiveAccounts
+    .sort((a, b) => (b.availableBalance ?? b.balance) - (a.availableBalance ?? a.balance))
+    .map(account => {
+      const bal = account.availableBalance ?? account.balance;
+      return {
+        id: account.id,
+        name: account.name,
+        nickname: account.nickname?.trim() || null,
+        percentage: totalBalance > 0 ? (bal / totalBalance) * 100 : 0
+      };
+    });
 
   const segmentColors = [
     'bg-blue-300 dark:bg-blue-800',
@@ -313,7 +311,7 @@ export default function AccountsView({
             <div className="flex h-1.5 w-full rounded-full overflow-hidden mb-3 bg-gray-100 dark:bg-gray-800">
               {bankSegments.map((segment, idx) => (
                 <div 
-                  key={segment.name} 
+                  key={segment.id} 
                   className={segmentColors[idx % segmentColors.length]}
                   style={{ width: `${segment.percentage}%` }}
                   title={`${segment.name}: ${segment.percentage.toFixed(1)}%`}
@@ -322,9 +320,9 @@ export default function AccountsView({
             </div>
             <div className="flex flex-wrap gap-x-4 gap-y-2">
               {bankSegments.map((segment, idx) => (
-                <div key={segment.name} className="flex items-center gap-1.5">
+                <div key={segment.id} className="flex items-center gap-1.5">
                   <div className={`w-2 h-2 rounded-full ${segmentColors[idx % segmentColors.length]}`} />
-                  <span className="font-sans text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]">
+                  <span className="font-sans text-xs text-gray-500 dark:text-gray-400 truncate max-w-[140px]" title={segment.nickname ? `${segment.name} (${segment.nickname})` : segment.name}>
                     {segment.name} ({segment.percentage.toFixed(0)}%)
                   </span>
                 </div>
