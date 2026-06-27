@@ -187,69 +187,51 @@ export default function ActivityLogView() {
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-        <div>
-          <h1 className="font-sans font-semibold text-xl text-gray-900 dark:text-gray-50 tracking-tight">
-            Activity Log
-          </h1>
-          <p className="font-sans text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            Complete audit trail of all actions — {total.toLocaleString()} entries
-          </p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={fetchLogs}
-            className="p-2.5 rounded-xl border border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            title="Refresh"
-          >
-            <RefreshCw size={16} />
-          </button>
-          <div className="relative group">
-            <button className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm font-medium font-sans">
-              <Download size={15} />
-              Export
-              <ChevronDown size={14} />
-            </button>
-            <div className="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl z-20 overflow-hidden hidden group-hover:block">
-              <button onClick={handleExportCSV} className="w-full text-left px-4 py-2.5 text-sm font-sans text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
-                Export as CSV
-              </button>
-              <button onClick={handleExportJSON} className="w-full text-left px-4 py-2.5 text-sm font-sans text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
-                Export as JSON
-              </button>
-            </div>
-          </div>
-          <button
-            onClick={() => { setShowClearModal(true); setClearConfirmed(false); }}
-            className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm font-medium font-sans"
-          >
-            <Trash2 size={15} />
-            Clear Logs
-          </button>
-        </div>
-      </div>
+    <div className="max-w-5xl mx-auto space-y-3">
 
-      {/* Filters */}
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
-        <div className="flex flex-wrap gap-3">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+      {/* ── Compact Toolbar ─────────────────────────────────────────────── */}
+      <div className="flex flex-col gap-2">
+        {/* Title row */}
+        <div className="flex items-center justify-between min-h-[28px]">
+          <div className="flex items-center gap-2.5">
+            <h1 className="font-sans font-semibold text-base text-gray-900 dark:text-gray-50 tracking-tight leading-none">
+              Activity Log
+            </h1>
+            {!loading && (
+              <span className="inline-block px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs font-sans font-medium rounded-full border border-gray-200 dark:border-gray-700">
+                {total.toLocaleString()}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Controls row */}
+        <div className="flex flex-wrap items-center gap-1.5">
+
+          {/* Search */}
+          <div className="relative flex-1 min-w-[160px] max-w-[260px]">
+            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none" />
             <input
               type="text"
-              placeholder="Search actions, entities…"
+              placeholder="Search…"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-sans text-gray-900 dark:text-gray-50 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              className="w-full pl-7 pr-2.5 py-1.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg text-xs font-sans text-gray-900 dark:text-gray-50 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-shadow"
             />
           </div>
+
+          {/* Divider */}
+          <div className="hidden sm:block w-px h-5 bg-gray-200 dark:bg-gray-800" />
+
+          {/* Module */}
           <Select
             value={moduleFilter}
             onChange={e => setModuleFilter(e.target.value)}
             options={MODULES.map(m => ({ value: m, label: m === 'all' ? 'All Modules' : m }))}
-            className="px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-50 text-sm rounded-xl font-sans font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            className="px-2.5 py-1.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 text-xs rounded-lg font-sans focus:outline-none focus:ring-2 focus:ring-blue-500/40"
           />
+
+          {/* Status */}
           <Select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
@@ -258,20 +240,61 @@ export default function ActivityLogView() {
               { value: 'success', label: '✓ Success' },
               { value: 'failure', label: '✗ Failed' },
             ]}
-            className="px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-50 text-sm rounded-xl font-sans font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            className="px-2.5 py-1.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 text-xs rounded-lg font-sans focus:outline-none focus:ring-2 focus:ring-blue-500/40"
           />
+
+          {/* Time range */}
           <Select
             value={dateRange}
             onChange={e => setDateRange(e.target.value)}
             options={[
               { value: 'all', label: 'All Time' },
               { value: 'today', label: 'Today' },
-              { value: '7d', label: 'Last 7 days' },
-              { value: '30d', label: 'Last 30 days' },
-              { value: '90d', label: 'Last 90 days' },
+              { value: '7d', label: '7 days' },
+              { value: '30d', label: '30 days' },
+              { value: '90d', label: '90 days' },
             ]}
-            className="px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-50 text-sm rounded-xl font-sans font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            className="px-2.5 py-1.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 text-xs rounded-lg font-sans focus:outline-none focus:ring-2 focus:ring-blue-500/40"
           />
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Refresh */}
+          <button
+            onClick={fetchLogs}
+            title="Refresh"
+            className="p-1.5 rounded-lg border border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          >
+            <RefreshCw size={14} />
+          </button>
+
+          {/* Export dropdown */}
+          <div className="relative group">
+            <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-xs font-medium font-sans">
+              <Download size={13} />
+              Export
+              <ChevronDown size={12} />
+            </button>
+            <div className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl z-30 overflow-hidden hidden group-hover:block">
+              <button onClick={handleExportCSV} className="w-full text-left px-3 py-2 text-xs font-sans text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                Export as CSV
+              </button>
+              <button onClick={handleExportJSON} className="w-full text-left px-3 py-2 text-xs font-sans text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                Export as JSON
+              </button>
+            </div>
+          </div>
+
+          {/* Clear */}
+          <button
+            onClick={() => { setShowClearModal(true); setClearConfirmed(false); }}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-xs font-medium font-sans"
+          >
+            <Trash2 size={13} />
+            Clear
+          </button>
+
         </div>
       </div>
 
