@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Check } from 'lucide-react';
 
 export interface SelectOption {
@@ -29,6 +30,7 @@ export default function Select({
 }: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const [rect, setRect] = useState<DOMRect | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const listboxId = id ? `${id}-listbox` : undefined;
 
@@ -36,18 +38,41 @@ export default function Select({
 
   useEffect(() => {
     const handleMouseDown = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      // Check if clicking inside the trigger OR inside the portal
+      const listbox = document.getElementById(listboxId || 'select-listbox-portal');
+      if (
+        containerRef.current && 
+        !containerRef.current.contains(event.target as Node) &&
+        (!listbox || !listbox.contains(event.target as Node))
+      ) {
         setIsOpen(false);
       }
     };
     document.addEventListener('mousedown', handleMouseDown);
     return () => document.removeEventListener('mousedown', handleMouseDown);
-  }, []);
+  }, [listboxId]);
 
   useEffect(() => {
     if (isOpen) {
       const index = options.findIndex(opt => opt.value === value);
       setHighlightedIndex(index !== -1 ? index : 0);
+      
+      if (containerRef.current) {
+        setRect(containerRef.current.getBoundingClientRect());
+      }
+      
+      const handleScroll = () => {
+        if (containerRef.current) {
+          setRect(containerRef.current.getBoundingClientRect());
+        }
+      };
+      
+      window.addEventListener('scroll', handleScroll, true);
+      window.addEventListener('resize', handleScroll);
+      return () => {
+        window.removeEventListener('scroll', handleScroll, true);
+        window.removeEventListener('resize', handleScroll);
+      };
     }
   }, [isOpen, value, options]);
 
@@ -136,11 +161,17 @@ export default function Select({
         />
       </button>
 
-      {isOpen && (
+      {isOpen && rect && createPortal(
         <ul
-          id={listboxId}
+          id={listboxId || 'select-listbox-portal'}
           role="listbox"
-          className="absolute z-[100] left-0 right-0 mt-1 w-full min-w-[140px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl max-h-60 overflow-y-auto py-1 origin-top animate-in fade-in-80 zoom-in-95 transition-all"
+          style={{
+            position: 'fixed',
+            top: rect.bottom + 4,
+            left: rect.left,
+            width: rect.width,
+          }}
+          className="z-[9999] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl max-h-60 overflow-y-auto py-1 origin-top animate-in fade-in-80 zoom-in-95 transition-all"
         >
           {options.map((opt, index) => {
             const isSelected = value === opt.value;
@@ -151,7 +182,10 @@ export default function Select({
                 key={opt.value}
                 role="option"
                 aria-selected={isSelected}
-                onClick={() => handleSelect(opt.value)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSelect(opt.value);
+                }}
                 onMouseEnter={() => setHighlightedIndex(index)}
                 className={`px-3 py-2 text-sm font-sans font-medium cursor-pointer flex items-center justify-between gap-2 transition-colors ${
                   isHighlighted
@@ -164,7 +198,8 @@ export default function Select({
               </li>
             );
           })}
-        </ul>
+        </ul>,
+        document.body
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Goal, Entry } from '../../types';
 import { 
   Target, 
@@ -12,7 +12,8 @@ import {
   ChevronRight,
   ShieldCheck,
   X,
-  Check
+  Check,
+  Pin
 } from 'lucide-react';
 import Select from '../Select';
 
@@ -80,6 +81,7 @@ export default function GoalsView({
   }, [auxGoals]);
 
   // Form states
+  const [pinnedGoalId, setPinnedGoalId] = useState<string | null>('primary');
   const [isEditPrimaryOpen, setIsEditPrimaryOpen] = useState(false);
   const [primaryName, setPrimaryName] = useState(primaryGoal.name);
   const [primaryTarget, setPrimaryTarget] = useState(String(primaryGoal.targetAmount));
@@ -142,7 +144,11 @@ export default function GoalsView({
       return;
     }
     if (isNaN(tgt) || tgt <= 0 || isNaN(cur) || cur < 0) {
-      setAuxError('Amounts must be valid.');
+      setAuxError('Amounts must be valid positive numbers.');
+      return;
+    }
+    if (cur > tgt) {
+      setAuxError('Starting Amount cannot exceed Target Amount.');
       return;
     }
 
@@ -227,30 +233,23 @@ export default function GoalsView({
     setIsContribOpen(false);
   };
 
-  const primaryPct = Math.min(100, Math.round((primaryGoal.currentAmount / primaryGoal.targetAmount) * 100));
-
-  let requiredDailySavings: number | null = null;
-  let remainingDays: number | null = null;
-  if (primaryGoal.deadline && primaryGoal.currentAmount < primaryGoal.targetAmount) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const deadlineDate = new Date(primaryGoal.deadline);
-    deadlineDate.setHours(0, 0, 0, 0);
-    const diffTime = deadlineDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays > 0) {
-      remainingDays = diffDays;
-      requiredDailySavings = (primaryGoal.targetAmount - primaryGoal.currentAmount) / diffDays;
-    }
-  }
+  const sortedGoals = useMemo(() => {
+    const arr = [
+      { ...primaryGoal, id: 'primary', category: 'Primary Accumulation Target', isPrimary: true },
+      ...auxGoals.map(g => ({ ...g, isPrimary: false }))
+    ];
+    if (!pinnedGoalId) return arr;
+    const pinned = arr.find(g => g.id === pinnedGoalId);
+    const unpinned = arr.filter(g => g.id !== pinnedGoalId);
+    return pinned ? [pinned, ...unpinned] : arr;
+  }, [primaryGoal, auxGoals, pinnedGoalId]);
 
   return (
     <div className="space-y-6">
       {/* 1. HEADER ROW */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-gray-200 dark:border-gray-800 pb-4">
         <div>
-          <span className="font-sans text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium">
+          <span className="font-semibold uppercase tracking-wider text-sm text-gray-500 mb-3 block">
             Capital Targets Board
           </span>
           <h1 className="font-sans font-semibold text-xl text-gray-900 dark:text-gray-50 mt-0.5 tracking-tight">
@@ -276,168 +275,52 @@ export default function GoalsView({
         </div>
       </div>
 
-      {/* 2. PRIMARY SAVINGS GOAL JUMBOTRON CARD (The Special card treatment scaled up) */}
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm p-6 rounded-2xl relative overflow-hidden">
-        
-        <div className="flex justify-between items-start">
-          <div>
-            <span className="font-sans text-xs text-blue-600 uppercase tracking-widest font-bold block mb-1">
-              Primary Accumulation Target
-            </span>
-            <div className="flex flex-col gap-1 mt-1.5">
-              <h2 className="font-sans font-bold text-2xl text-gray-900 dark:text-gray-50 flex items-center gap-3">
-                {primaryGoal.name}
-                {primaryGoal.deadline && (
-                  <span className="text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full flex items-center gap-1.5 border border-gray-200 dark:border-gray-700">
-                    <Calendar size={14} /> {primaryGoal.deadline}
-                  </span>
-                )}
-              </h2>
-              {requiredDailySavings !== null && (
-                <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">
-                  Requires <span className="font-bold text-gray-900 dark:text-gray-50">₹{Math.ceil(requiredDailySavings).toLocaleString('en-IN')}</span>/day savings to hit target in {remainingDays} days
-                </p>
-              )}
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              setPrimaryName(primaryGoal.name);
-              setPrimaryTarget(String(primaryGoal.targetAmount));
-              setPrimaryCurrent(String(primaryGoal.currentAmount));
-              setIsEditPrimaryOpen(true);
-            }}
-            className="text-xs font-sans text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:text-blue-600 border border-gray-200 dark:border-gray-800 hover:border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 dark:bg-blue-900/20 bg-gray-50 dark:bg-gray-800/50 px-3 py-1.5 rounded-lg transition-colors font-medium"
-          >
-            Edit Parameters
-          </button>
-        </div>
-
-        {/* Visual big percent gauge */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
-          <div className="md:col-span-1 flex justify-center md:justify-start relative">
-            <div className="relative w-[120px] h-[120px]">
-              <svg width="120" height="120" viewBox="0 0 120 120" className="transform -rotate-90">
-                <circle
-                  cx="60"
-                  cy="60"
-                  r="52"
-                  strokeWidth="12"
-                  className="stroke-gray-100 dark:stroke-gray-800 fill-none"
-                />
-                <circle
-                  cx="60"
-                  cy="60"
-                  r="52"
-                  strokeWidth="12"
-                  className="stroke-blue-600 fill-none transition-all duration-1000 ease-out"
-                  strokeDasharray="326.7"
-                  strokeDashoffset={326.7 - (326.7 * primaryPct) / 100}
-                  strokeLinecap="round"
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="font-sans text-2xl font-bold text-gray-900 dark:text-gray-50 tracking-tight">
-                  {primaryPct}%
-                </span>
-                <span className="font-sans text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold mt-0.5">
-                  Funded
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="md:col-span-3 space-y-3">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-2 mb-2">
-              <div>
-                <span className="block font-sans text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">
-                  Accumulated Balance
-                </span>
-                <span className="font-sans text-3xl font-bold text-gray-900 dark:text-gray-50 tracking-tight">
-                  ₹{primaryGoal.currentAmount.toLocaleString('en-IN')}
-                </span>
-              </div>
-              <div className="sm:text-right">
-                <span className="block font-sans text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">
-                  Target Capital
-                </span>
-                <span className="font-sans text-xl font-semibold text-gray-700 dark:text-gray-300">
-                  ₹{primaryGoal.targetAmount.toLocaleString('en-IN')}
-                </span>
-              </div>
-            </div>
+      {/* 2. UNIFIED DASHBOARD GRID */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {sortedGoals.map((g) => {
+          const isPinned = pinnedGoalId === g.id;
+          const isPrimary = g.isPrimary;
+          const pct = Math.min(100, Math.round((g.currentAmount / g.targetAmount) * 100));
+          const isCompleted = pct >= 100;
+          
+          let requiredDailySavings: number | null = null;
+          let remainingDays: number | null = null;
+          if (isPinned && g.deadline && g.currentAmount < g.targetAmount) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const deadlineDate = new Date(g.deadline);
+            deadlineDate.setHours(0, 0, 0, 0);
+            const diffTime = deadlineDate.getTime() - today.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             
-            <div className="w-full bg-gray-100 dark:bg-gray-800 h-2.5 rounded-full overflow-hidden border border-gray-200 dark:border-gray-800 relative">
-              <div 
-                className="bg-blue-600 h-full rounded-full transition-all duration-1000 ease-out"
-                style={{ width: `${primaryPct}%` }}
-              />
-            </div>
+            if (diffDays > 0) {
+              remainingDays = diffDays;
+              requiredDailySavings = (g.targetAmount - g.currentAmount) / diffDays;
+            }
+          }
 
-            {/* Milestone Timeline Markers */}
-            <div className="relative mt-6 pt-2 pb-1 border-t border-gray-100 dark:border-gray-800/50">
-              <div className="flex justify-between items-center relative z-10">
-                {[25, 50, 75, 100].map(milestone => {
-                  const isReached = primaryPct >= milestone;
-                  return (
-                    <div key={milestone} className="flex flex-col items-center">
-                      <div 
-                        className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors ${
-                          isReached 
-                            ? 'bg-blue-600 text-white shadow-sm' 
-                            : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-gray-700'
-                        }`}
-                      >
-                        {isReached ? <Check size={12} strokeWidth={3} /> : `${milestone}%`}
-                      </div>
-                      <span className={`text-[10px] font-medium mt-1.5 uppercase tracking-wider ${
-                        isReached ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'
-                      }`}>
-                        ₹{Math.round(primaryGoal.targetAmount * (milestone / 100)).toLocaleString('en-IN')}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-              {/* Background track line for milestones */}
-              <div className="absolute top-5 left-4 right-4 h-[2px] bg-gray-100 dark:bg-gray-800 -z-10" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. AUXILIARY GOALS LIST */}
-      <div className="space-y-4">
-        <h3 className="font-sans font-semibold text-sm text-gray-900 dark:text-gray-50 uppercase tracking-wide block">
-          Auxiliary Savings Targets
-        </h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {auxGoals.map(g => {
-            const pct = Math.min(100, Math.round((g.currentAmount / g.targetAmount) * 100));
-            const isCompleted = pct >= 100;
-
-            return (
-              <div 
-                key={g.id} 
-                className={`p-5 rounded-2xl bg-white dark:bg-gray-900 border transition-all shadow-sm ${
-                  isCompleted 
-                    ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20/30' 
-                    : 'border-gray-200 dark:border-gray-800 hover:border-blue-200 dark:border-blue-800 hover:shadow-md'
-                }`}
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="text-[10px] font-sans font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 dark:text-gray-500 px-2 py-0.5 rounded-md bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800">
-                      {g.category}
-                    </span>
-                    <h4 className="font-sans font-semibold text-gray-900 dark:text-gray-50 mt-2 truncate max-w-[200px]">
-                      {g.name}
-                    </h4>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => {
+          return (
+            <div 
+              key={g.id}
+              className={`bg-white dark:bg-gray-900 border transition-all duration-300 ease-in-out shadow-sm hover:shadow-lg rounded-2xl relative overflow-hidden ${
+                isPinned ? 'col-span-1 sm:col-span-2 lg:col-span-3 p-6' : 'col-span-1 py-4 px-6'
+              } ${
+                !isPinned && isCompleted
+                  ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20' 
+                  : 'border-gray-200 dark:border-gray-800 hover:border-blue-200 dark:border-blue-800'
+              }`}
+            >
+              {/* Pin Button common to both layouts */}
+              <div className="absolute top-3 right-3 z-20 flex gap-2 items-center">
+                {isPinned && (
+                  <button
+                    onClick={() => {
+                      if (isPrimary) {
+                        setPrimaryName(primaryGoal.name);
+                        setPrimaryTarget(String(primaryGoal.targetAmount));
+                        setPrimaryCurrent(String(primaryGoal.currentAmount));
+                        setIsEditPrimaryOpen(true);
+                      } else {
                         setAuxName(g.name);
                         setAuxTarget(String(g.targetAmount));
                         setAuxCurrent(String(g.currentAmount));
@@ -445,12 +328,174 @@ export default function GoalsView({
                         setAuxCategory(g.category || 'Assets');
                         setEditingAuxId(g.id);
                         setIsAddAuxOpen(true);
-                      }}
-                      className="text-xs font-sans font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                      title="Edit goal"
-                    >
-                      Edit
-                    </button>
+                      }
+                    }}
+                    className="text-xs font-sans text-gray-500 dark:text-gray-400 hover:text-blue-600 border border-gray-200 dark:border-gray-800 hover:border-blue-200 dark:border-blue-800 hover:bg-gray-50 transition-colors duration-200 dark:hover:bg-gray-800/80 bg-gray-50 dark:bg-gray-800/50 px-3 py-1.5 rounded-lg font-medium"
+                  >
+                    Edit Parameters
+                  </button>
+                )}
+                <div 
+                  onClick={() => setPinnedGoalId(prev => prev === g.id ? null : g.id)}
+                  className={`p-1.5 rounded-full transition-colors duration-200 cursor-pointer ${
+                    isPinned ? 'bg-gray-100 text-blue-600 dark:bg-gray-800' : 'hover:bg-gray-100 text-gray-400 dark:hover:bg-gray-800'
+                  }`}
+                  title={isPinned ? "Unpin Goal" : "Pin Goal"}
+                >
+                  <Pin size={18} className={isPinned ? 'fill-blue-600' : ''} />
+                </div>
+              </div>
+
+              {isPinned ? (
+                /* EXPANDED PINNED LAYOUT */
+                <div className="flex flex-col h-full w-full">
+                  <div className="flex justify-between items-start">
+                    <div className="pr-20">
+                      <span className="font-sans text-xs text-blue-600 uppercase tracking-widest font-bold block mb-1">
+                        {g.category}
+                      </span>
+                      <div className="flex flex-col gap-1 mt-1.5">
+                        <h2 className="font-sans font-bold text-2xl text-gray-900 dark:text-gray-50 flex items-center gap-3">
+                          {g.name}
+                          {g.deadline && (
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full flex items-center gap-1.5 border border-gray-200 dark:border-gray-700">
+                              <Calendar size={14} /> {g.deadline}
+                            </span>
+                          )}
+                        </h2>
+                        {requiredDailySavings !== null && (
+                          <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">
+                            Requires <span className="font-bold text-gray-900 dark:text-gray-50">₹{Math.ceil(requiredDailySavings).toLocaleString('en-IN')}</span>/day savings to hit target in {remainingDays} days
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-8 flex flex-col md:flex-row md:items-center gap-6">
+                    <div className="flex justify-center md:justify-start relative shrink-0">
+                      <div className="relative w-24 h-24 md:w-[120px] md:h-[120px]">
+                        <svg viewBox="0 0 120 120" className="transform -rotate-90 w-full h-full">
+                          <circle cx="60" cy="60" r="52" strokeWidth="12" className="stroke-gray-100 dark:stroke-gray-800 fill-none" />
+                          <circle
+                            cx="60" cy="60" r="52" strokeWidth="12"
+                            className="stroke-blue-600 fill-none transition-all duration-1000 ease-out"
+                            strokeDasharray="326.7"
+                            strokeDashoffset={326.7 - (326.7 * pct) / 100}
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className="font-sans text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-50 tracking-tight">
+                            {pct}%
+                          </span>
+                          <span className="font-sans text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold mt-0.5">
+                            Funded
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex-1 space-y-3 w-full">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-2 mb-2">
+                        <div>
+                          <span className="block font-sans text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">
+                            Accumulated Balance
+                          </span>
+                          <span className="font-sans text-3xl font-bold text-gray-900 dark:text-gray-50 tracking-tight">
+                            ₹{g.currentAmount.toLocaleString('en-IN')}
+                          </span>
+                        </div>
+                        <div className="sm:text-right">
+                          <span className="block font-sans text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">
+                            Target Capital
+                          </span>
+                          <span className="font-sans text-xl font-semibold text-gray-700 dark:text-gray-300">
+                            ₹{g.targetAmount.toLocaleString('en-IN')}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="w-full bg-gray-100 dark:bg-gray-800 h-2.5 rounded-full overflow-hidden border border-gray-200 dark:border-gray-800 relative">
+                        <div 
+                          className="bg-blue-600 h-full rounded-full transition-all duration-1000 ease-out"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+
+                      <div className="relative mt-6 pt-2 pb-1 border-t border-gray-100 dark:border-gray-800/50">
+                        <div className="flex w-full justify-between text-xs text-gray-500 mt-2 relative z-10">
+                          {[25, 50, 75, 100].map(milestone => {
+                            const isReached = pct >= milestone;
+                            return (
+                              <div key={milestone} className="flex flex-col items-center">
+                                <div 
+                                  className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors ${
+                                    isReached ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-gray-700'
+                                  }`}
+                                >
+                                  {isReached ? <Check size={12} strokeWidth={3} /> : `${milestone}%`}
+                                </div>
+                                <span className={`mt-1 ${isReached ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-500 dark:text-gray-400'}`}>
+                                  ₹{Math.round(g.targetAmount * (milestone / 100)).toLocaleString('en-IN')}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="absolute top-5 left-4 right-4 h-[2px] bg-gray-100 dark:bg-gray-800 -z-10" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* COMPACT LAYOUT */
+                <div className="flex flex-col h-full justify-between pt-1">
+                  <div className="flex justify-between items-start">
+                    <div className="overflow-hidden pr-8">
+                      <span className="text-[10px] font-sans font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-md bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800">
+                        {g.category}
+                      </span>
+                      <h4 
+                        className="font-sans font-semibold text-gray-900 dark:text-gray-50 mt-2 truncate whitespace-nowrap overflow-hidden text-ellipsis"
+                        title={g.name}
+                      >
+                        {g.name}
+                      </h4>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 mt-3 shrink-0">
+                    {isPrimary ? (
+                      <button
+                        onClick={() => {
+                          setPrimaryName(primaryGoal.name);
+                          setPrimaryTarget(String(primaryGoal.targetAmount));
+                          setPrimaryCurrent(String(primaryGoal.currentAmount));
+                          setIsEditPrimaryOpen(true);
+                        }}
+                        className="text-xs font-sans font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200 px-2 py-1 rounded"
+                        title="Edit primary goal parameters"
+                      >
+                        Edit
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setAuxName(g.name);
+                          setAuxTarget(String(g.targetAmount));
+                          setAuxCurrent(String(g.currentAmount));
+                          setAuxDeadline(g.deadline || '');
+                          setAuxCategory(g.category || 'Assets');
+                          setEditingAuxId(g.id);
+                          setIsAddAuxOpen(true);
+                        }}
+                        className="text-xs font-sans font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200 px-2 py-1 rounded"
+                        title="Edit goal"
+                      >
+                        Edit
+                      </button>
+                    )}
                     <span className="text-gray-200 dark:text-gray-700">|</span>
                     <button
                       onClick={() => {
@@ -458,52 +503,55 @@ export default function GoalsView({
                         setContribAmount('');
                         setIsContribOpen(true);
                       }}
-                      className="text-xs font-sans font-medium text-blue-600 hover:text-blue-800 dark:text-blue-300"
+                      className="text-xs font-sans font-medium text-blue-600 hover:text-blue-800 dark:text-blue-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200 px-2 py-1 rounded"
                       title="Contribute to goal"
                     >
                       Deposit
                     </button>
-                    <span className="text-gray-200 dark:text-gray-700">|</span>
-                    <button
-                      onClick={() => handleDeleteAux(g.id)}
-                      className="text-gray-400 dark:text-gray-500 hover:text-red-600 dark:text-red-400 transition-colors"
-                      title="Delete goal"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    {!isPrimary && (
+                      <>
+                        <span className="text-gray-200 dark:text-gray-700">|</span>
+                        <button
+                          onClick={() => handleDeleteAux(g.id)}
+                          className="text-gray-400 dark:text-gray-500 hover:text-red-500 transition-colors cursor-pointer focus:ring-2 focus:ring-red-500 rounded p-1"
+                          title="Delete goal"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </>
+                    )}
                   </div>
-                </div>
 
-                {/* Progress details */}
-                <div className="mt-5 space-y-2">
-                  <div className="flex justify-between items-end font-sans text-xs font-medium">
-                    <span className="text-gray-500 dark:text-gray-400 dark:text-gray-500">Progress</span>
-                    <span className={isCompleted ? 'text-green-600 dark:text-green-400 font-bold' : 'text-gray-900 dark:text-gray-50'}>
-                      ₹{g.currentAmount.toLocaleString('en-IN')} / ₹{g.targetAmount.toLocaleString('en-IN')} ({pct}%)
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-100 dark:bg-gray-800 h-2 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full transition-all duration-1000 ease-out ${
-                        isCompleted ? 'bg-green-500' : 'bg-blue-600'
-                      }`}
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-[10px] font-sans font-medium text-gray-500 dark:text-gray-400 dark:text-gray-500">
-                    <span>Target by: {g.deadline}</span>
-                    <span>{isCompleted ? 'Completed' : `₹${Math.round((g.targetAmount - g.currentAmount))} remaining`}</span>
+                  {/* Progress details */}
+                  <div className="mt-5 space-y-2">
+                    <div className="flex justify-between items-center font-sans text-xs font-medium">
+                      <span className="text-gray-500 dark:text-gray-400 dark:text-gray-500">Progress</span>
+                      <span className={isCompleted ? 'text-green-600 dark:text-green-400 font-bold' : 'text-gray-900 dark:text-gray-50'}>
+                        ₹{g.currentAmount.toLocaleString('en-IN')} / ₹{g.targetAmount.toLocaleString('en-IN')} ({pct}%)
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-100 dark:bg-gray-800 h-2 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full transition-all duration-1000 ease-out ${
+                          isCompleted ? 'bg-green-500' : 'bg-blue-600'
+                        }`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    {g.deadline && (
+                      <div className="flex justify-between items-center w-full mt-4">
+                        <span className="text-gray-500 text-xs">Target by: {g.deadline}</span>
+                        {!isCompleted && Math.round(g.targetAmount - g.currentAmount) > 0 && (
+                          <span className="text-gray-500 text-xs">₹{Math.round((g.targetAmount - g.currentAmount))} remaining</span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            );
-          })}
-          {auxGoals.length === 0 && (
-            <div className="md:col-span-2 text-center py-10 bg-gray-50 dark:bg-gray-800/50 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl text-sm font-medium text-gray-500 dark:text-gray-400 dark:text-gray-500">
-              No secondary goals loaded. Initialize one above.
+              )}
             </div>
-          )}
-        </div>
+          );
+        })}
       </div>
 
       {/* 4. MODALS */}
@@ -672,7 +720,7 @@ export default function GoalsView({
               </button>
             </div>
             
-            <form onSubmit={handleAddAux} className="p-5 space-y-5 font-sans">
+            <form onSubmit={handleAddAux} className="p-5 space-y-6 font-sans">
               {auxError && (
                 <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-sm text-red-600 dark:text-red-400 font-medium">
                   {auxError}
@@ -692,17 +740,18 @@ export default function GoalsView({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 md:gap-y-0 gap-x-6">
                 <div>
                   <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
                     Target Amount (₹)
                   </label>
                   <input
                     type="number"
+                    min="0"
                     placeholder="e.g. 100000"
                     value={auxTarget}
                     onChange={(e) => setAuxTarget(e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl font-sans text-sm text-gray-900 dark:text-gray-50 outline-none transition-all"
+                    className={`w-full px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border ${auxError.includes('Amount') ? 'border-red-500' : 'border-gray-200 dark:border-gray-800'} focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl font-sans text-sm text-gray-900 dark:text-gray-50 outline-none transition-all`}
                   />
                 </div>
                 <div>
@@ -711,15 +760,16 @@ export default function GoalsView({
                   </label>
                   <input
                     type="number"
+                    min="0"
                     placeholder="e.g. 5000"
                     value={auxCurrent}
                     onChange={(e) => setAuxCurrent(e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl font-sans text-sm text-gray-900 dark:text-gray-50 outline-none transition-all"
+                    className={`w-full px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border ${auxError.includes('Amount') ? 'border-red-500' : 'border-gray-200 dark:border-gray-800'} focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl font-sans text-sm text-gray-900 dark:text-gray-50 outline-none transition-all`}
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 md:gap-y-0 gap-x-6">
                 <div>
                   <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
                     Category

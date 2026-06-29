@@ -75,8 +75,7 @@ export default function DebtsView({
 
   const getPayoffDate = (debt: Debt) => {
     if (!debt.emi || !debt.nextDueDate || debt.remainingAmount <= 0) return null;
-    const totalEmis = Math.ceil(debt.totalAmount / debt.emi);
-    const emisRemaining = Math.max(0, totalEmis - (debt.emisPaid || 0));
+    const emisRemaining = Math.ceil(debt.remainingAmount / debt.emi);
     if (emisRemaining <= 0) return null;
     const [y, m, d] = debt.nextDueDate.split('-').map(Number);
     const payoff = new Date(y, m - 1, d);
@@ -331,8 +330,10 @@ export default function DebtsView({
           const payoffDate = getPayoffDate(debt);
 
           const hasEmi = debt.emi !== undefined && debt.emi > 0;
-          const totalEmis = hasEmi ? Math.ceil(debt.totalAmount / debt.emi!) : 0;
-          const emisRemaining = Math.max(0, totalEmis - (debt.emisPaid || 0));
+          const emisRemaining = hasEmi && !isClosed ? Math.ceil(debt.remainingAmount / debt.emi!) : 0;
+          const partialRemainder = hasEmi && !isClosed ? Math.round(debt.remainingAmount) % Math.round(debt.emi!) : 0;
+          const hasPartialFinalEmi = partialRemainder > 0;
+          const finalEmiAmount = hasPartialFinalEmi ? partialRemainder : null;
           const paidAmount = debt.totalAmount - debt.remainingAmount;
 
           const currentMonth = new Date().toISOString().slice(0, 7);
@@ -428,8 +429,8 @@ export default function DebtsView({
               </div>
             </div>
 
-            {/* Stats row — always 4 columns; show "—" for missing EMI fields */}
-            <div className="grid grid-cols-4 border-t border-gray-100 dark:border-gray-800 pt-3 pb-3">
+            {/* Stats row — 4 columns on md+, 2×2 on sm; items-start prevents cross-column height bleed */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 items-start gap-y-3 border-t border-gray-100 dark:border-gray-800 pt-3 pb-2">
               <div>
                 <p className="font-sans text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium mb-1">Original Amount</p>
                 <p className="font-sans text-sm font-semibold text-gray-500 dark:text-gray-400">₹{debt.totalAmount.toLocaleString('en-IN')}</p>
@@ -449,10 +450,13 @@ export default function DebtsView({
               <div>
                 <p className="font-sans text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold mb-1">EMIs Remaining</p>
                 {hasEmi && !isClosed ? (
-                  <>
-                    <p className="font-sans text-base font-bold text-blue-600 dark:text-blue-400">{emisRemaining}</p>
-                    {payoffDate && <p className="font-sans text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">paid off by {payoffDate}</p>}
-                  </>
+                  <p
+                    className="font-sans text-base font-bold text-blue-600 dark:text-blue-400 cursor-default"
+                    title={hasPartialFinalEmi ? `Last payment will be ₹${finalEmiAmount!.toLocaleString('en-IN')} (partial EMI)` : undefined}
+                  >
+                    {emisRemaining}
+                    {hasPartialFinalEmi && <span className="text-[10px] font-normal text-amber-500 dark:text-amber-400 ml-0.5">*</span>}
+                  </p>
                 ) : (
                   <p className="font-sans text-sm font-semibold text-gray-300 dark:text-gray-600">{isClosed ? 'Paid off' : '—'}</p>
                 )}
@@ -465,6 +469,20 @@ export default function DebtsView({
                 <span>₹{paidAmount.toLocaleString('en-IN')} paid · ₹{debt.remainingAmount.toLocaleString('en-IN')} remaining</span>
                 <span>{getProgress(debt).toFixed(1)}% Paid</span>
               </div>
+              {hasEmi && !isClosed && (payoffDate || hasPartialFinalEmi) && (
+                <div className="flex items-center gap-3 flex-wrap">
+                  {payoffDate && (
+                    <span className="font-sans text-[10px] text-gray-400 dark:text-gray-500">
+                      Payoff: {payoffDate}
+                    </span>
+                  )}
+                  {hasPartialFinalEmi && (
+                    <span className="font-sans text-[10px] text-amber-500 dark:text-amber-400">
+                      Final EMI: ₹{finalEmiAmount!.toLocaleString('en-IN')}
+                    </span>
+                  )}
+                </div>
+              )}
               <div className="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-1000 ease-out ${isClosed ? 'bg-green-500' : 'bg-blue-600'}`}
