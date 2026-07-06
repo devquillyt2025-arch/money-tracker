@@ -77,4 +77,12 @@ export interface Account {
   vaultLink?: string | null;
 }
 
-export type ActiveTab = 'dashboard' | 'transactions' | 'investments' | 'debts' | 'goals' | 'analytics' | 'bills' | 'accounts' | 'settings' | 'budgets' | 'activity-log';
+export type ActiveTab = 'dashboard' | 'transactions' | 'investments' | 'debts' | 'goals' | 'analytics' | 'bills' | 'accounts' | 'settings' | 'budgets' | 'activity-log' | 'links';
+
+export interface SavedLink {
+  id: string;
+  title: string;
+  url: string;
+  category: string;
+  createdAt: number;
+}

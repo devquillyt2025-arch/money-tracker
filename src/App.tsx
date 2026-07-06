@@ -13,6 +13,7 @@ import SettingsView from './components/views/SettingsView';
 import BillsView from './components/views/BillsView';
 import BudgetsView from './components/views/BudgetsView';
 import ActivityLogView from './components/views/ActivityLogView';
+import LinksView from './components/views/LinksView';
 import { Menu, Search, Clock, X } from 'lucide-react';
 
 import { auth, googleAuthProvider } from './lib/firebase';
@@ -584,6 +585,8 @@ export default function App() {
         );
       case 'activity-log':
         return <ActivityLogView />;
+      case 'links':
+        return <LinksView />;
       default:
         return <div>Protcol View Error</div>;
     }

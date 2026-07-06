@@ -12,7 +12,8 @@ import {
   FileText,
   Landmark,
   Wallet,
-  History
+  History,
+  Link2
 } from 'lucide-react';
 import { ActiveTab } from '../types';
 
@@ -39,6 +40,7 @@ export default function Sidebar({
     { id: 'debts' as ActiveTab, label: 'Debt & Loans', icon: CreditCard, section: 'General' },
     { id: 'goals' as ActiveTab, label: 'Goals', icon: Target, section: 'General' },
     { id: 'budgets' as ActiveTab, label: 'Budgets', icon: Wallet, section: 'General' },
+    { id: 'links' as ActiveTab, label: 'Important Links', icon: Link2, section: 'General' },
     { id: 'analytics' as ActiveTab, label: 'Analytics', icon: BarChart3, section: 'Tools' },
     { id: 'activity-log' as ActiveTab, label: 'Activity Log', icon: History, section: 'Tools' },
     { id: 'settings' as ActiveTab, label: 'Settings', icon: Settings, section: 'Tools' },
