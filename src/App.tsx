@@ -13,8 +13,7 @@ import SettingsView from './components/views/SettingsView';
 import BillsView from './components/views/BillsView';
 import { Menu, Search, Clock, X } from 'lucide-react';
 
-import { auth, googleAuthProvider } from './lib/firebase';
-import { signInWithPopup, onAuthStateChanged, User } from 'firebase/auth';
+import { authClient } from './lib/auth';
 import { api } from './lib/api';
 
 export default function App() {
@@ -22,8 +21,9 @@ export default function App() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  const [authUser, setAuthUser] = useState<User | null>(null);
+  const [authUser, setAuthUser] = useState<{ id: string; email: string } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [signInError, setSignInError] = useState<string | null>(null);
 
   const [userName, setUserName] = useState<string>('Dev');
   const [categoryBudgets, setCategoryBudgets] = useState<Record<string, number>>({});
@@ -90,7 +90,13 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    // Google sign-in is a full-page redirect, so the session only needs to be
+    // read once on load. `cancelled` stops StrictMode's discarded first run from
+    // loading data or creating recurring entries twice.
+    let cancelled = false;
+    authClient.getSession().then(async ({ data: session }) => {
+      if (cancelled) return;
+      const user = session?.user ?? null;
       setAuthUser(user);
       if (user) {
         try {
@@ -164,15 +170,26 @@ export default function App() {
         }
       }
       setLoading(false);
+    }).catch((e) => {
+      // Auth service unreachable or misconfigured: show the sign-in screen
+      // instead of hanging on "Loading...".
+      console.error("Failed to load session", e);
+      if (!cancelled) setLoading(false);
     });
-    return () => unsubscribe();
+    return () => { cancelled = true; };
   }, []);
 
   const handleSignIn = async () => {
+    setSignInError(null);
     try {
-      await signInWithPopup(auth, googleAuthProvider);
+      const { error } = await authClient.signIn.social({
+        provider: 'google',
+        callbackURL: window.location.origin,
+      });
+      if (error) throw error;
     } catch (error) {
       console.error("Error signing in", error);
+      setSignInError("Couldn't reach the sign-in service. Please try again.");
     }
   };
 
@@ -557,7 +574,7 @@ export default function App() {
             <span className="text-white font-bold text-xl">L</span>
           </div>
           <h1 className="text-2xl font-sans font-semibold text-gray-900 dark:text-gray-50">Sign in to Ledger</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500 leading-relaxed">
+          <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
             Manage your personal finances with a clean, clear overview.
           </p>
           <button
@@ -566,6 +583,9 @@ export default function App() {
           >
             Sign in with Google
           </button>
+          {signInError && (
+            <p className="text-sm text-red-600 dark:text-red-400">{signInError}</p>
+          )}
         </div>
       </div>
     );
@@ -587,7 +607,7 @@ export default function App() {
         <div className="flex items-center gap-3">
           <button 
             onClick={() => setIsMobileOpen(true)}
-            className="p-1.5 text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:text-gray-50 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50"
+            className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50"
           >
             <Menu size={16} />
           </button>

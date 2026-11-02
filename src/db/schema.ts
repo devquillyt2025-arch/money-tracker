@@ -1,7 +1,7 @@
 import { pgTable, text, integer, boolean, varchar, date, serial, real, jsonb, timestamp } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
-  id: text('id').primaryKey(), // Firebase UID
+  id: text('id').primaryKey(), // Neon Auth user id (older rows may still carry a Firebase UID)
   userName: varchar('user_name', { length: 255 }).notNull().default('Dev'),
   investmentsBalance: integer('investments_balance').notNull().default(0),
   categoryBudgets: jsonb('category_budgets').$type<Record<string, number>>().default({}),
@@ -56,6 +56,8 @@ export const debts = pgTable('debts', {
   interestRate: real('interest_rate'),
   emi: integer('emi'),
   startDate: date('start_date'),
+  nextDueDate: date('next_due_date'),
+  emisPaid: integer('emis_paid').notNull().default(0),
 });
 
 export const paymentHistory = pgTable('payment_history', {
@@ -80,4 +82,25 @@ export const accounts = pgTable('accounts', {
   status: varchar('status', { length: 50 }).default('active'),
   currency: text('currency').default('INR'),
   balanceUpdatedAt: timestamp('balance_updated_at').defaultNow(),
+  nickname: varchar('nickname', { length: 255 }),
+  branchName: varchar('branch_name', { length: 255 }),
+  purpose: varchar('purpose', { length: 255 }),
+  isDefault: boolean('is_default').default(false),
+  notes: text('notes'),
+  vaultLink: text('vault_link'),
+});
+
+// Not used by the app code yet, but holds data: declared so `db:push` keeps it.
+export const activityLogs = pgTable('activity_logs', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  timestamp: timestamp('timestamp').notNull().defaultNow(),
+  module: varchar('module', { length: 100 }).notNull(),
+  action: varchar('action', { length: 255 }).notNull(),
+  entityId: text('entity_id'),
+  entityName: varchar('entity_name', { length: 255 }),
+  oldValue: jsonb('old_value'),
+  newValue: jsonb('new_value'),
+  status: varchar('status', { length: 50 }).notNull().default('success'),
+  details: text('details'),
 });

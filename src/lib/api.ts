@@ -1,9 +1,8 @@
-import { auth } from "./firebase";
+import { getAuthToken } from "./auth";
 
 const getHeaders = async () => {
-  const user = auth.currentUser;
-  if (!user) throw new Error("Not authenticated");
-  const token = await user.getIdToken();
+  const token = await getAuthToken();
+  if (!token) throw new Error("Not authenticated");
   return {
     "Content-Type": "application/json",
     Authorization: `Bearer ${token}`,
@@ -176,25 +175,6 @@ export const api = {
       headers: await getHeaders(),
       body: JSON.stringify(user),
     });
-    return res.json();
-  },
-
-  generateInsights: async (prompt: string) => {
-    const res = await fetch("/api/insights", {
-      method: "POST",
-      headers: await getHeaders(),
-      body: JSON.stringify({ prompt }),
-    });
-    if (!res.ok) {
-      let errorMessage = "Failed to fetch insights";
-      try {
-        const errorData = await res.json();
-        errorMessage = errorData.error || errorMessage;
-      } catch (e) {
-        errorMessage = await res.text();
-      }
-      throw new Error(errorMessage);
-    }
     return res.json();
   },
 };

@@ -1,20 +1,31 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Ledger
 
-# Run and deploy your AI Studio app
+Personal finance dashboard: React + Vite frontend, Express API, Postgres on [Neon](https://neon.com), and sign-in with Neon Auth (managed Better Auth).
 
-This contains everything you need to run your app locally.
+## Run locally
 
-View your app in AI Studio: https://ai.studio/apps/39533bcd-5053-45b8-a5fd-a9141bc16920
+1. `npm install`
+2. Copy `.env.example` to `.env` and fill in, from the Neon Console:
+   - `DATABASE_URL`: project → **Connect** (pooled connection string)
+   - `VITE_NEON_AUTH_URL`: project → **Auth** → Auth Base URL
+3. First time only: `npm run db:push` to create the tables.
+4. `npm run dev` and open http://localhost:3000
 
-## Run Locally
+Google sign-in works on localhost out of the box using Neon's shared development credentials. Before going to production:
 
-**Prerequisites:**  Node.js
+- add your production domain to Neon Auth's trusted domains and turn off **Allow Localhost**
+- replace the shared Google credentials with your own OAuth client (Neon docs → Auth → Set up OAuth)
 
+## Deploying (Vercel)
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+Set `DATABASE_URL` and `VITE_NEON_AUTH_URL` in the project's environment variables.
+
+## Keeping the data safe
+
+| Command | What it does |
+| --- | --- |
+| `npm run db:backup` | Consistent snapshot of every table into `backups/<timestamp>/` (git-ignored), checksummed and read back to verify. |
+| `npm run db:restore -- backups/<timestamp>` | Restores into `DATABASE_URL` in one transaction. Never overwrites existing rows, and checks every row before committing. Dry run unless you add `--apply`. |
+| `npm run db:link-user -- --to you@example.com` | One-time migration: moves data from the old Firebase account to your Neon Auth account. Dry run unless you add `--apply`. |
+
+Take a backup before schema changes (`db:push`). Neon also keeps point-in-time history for each branch; the restore window depends on your plan.

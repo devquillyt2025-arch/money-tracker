@@ -1,12 +1,10 @@
 import express, { Request, Response, NextFunction } from "express";
-import { getApps, initializeApp, applicationDefault, cert } from "firebase-admin/app";
-import { getAuth, DecodedIdToken } from "firebase-admin/auth";
+import { createRemoteJWKSet, jwtVerify } from "jose";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import { pgTable, text, integer, boolean, varchar, date, real, jsonb, timestamp } from "drizzle-orm/pg-core";
-import { eq } from "drizzle-orm";
+import { pgTable, text, integer, boolean, varchar, date, real, jsonb, timestamp, type AnyPgColumn } from "drizzle-orm/pg-core";
+import { and, eq } from "drizzle-orm";
 import crypto from "crypto";
-import { GoogleGenAI } from "@google/genai";
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 const users = pgTable("users", {
@@ -93,67 +91,87 @@ const accounts = pgTable("accounts", {
 
 // ── Database ──────────────────────────────────────────────────────────────────
 const schema = { users, entries, bills, goals, holdings, debts, paymentHistory, accounts };
-const pool = new Pool({
+// Explicit pool limits — relying on pg defaults (max: 10, no idle timeout tuning)
+// risks connection exhaustion on small/serverless deployments. Override via env
+// (e.g. lower PG_POOL_MAX to 1-3 per instance on serverless).
+export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  connectionTimeoutMillis: 15000,
-  ssl: { rejectUnauthorized: false },
+  max: Number(process.env.PG_POOL_MAX ?? 10),
+  idleTimeoutMillis: Number(process.env.PG_IDLE_TIMEOUT_MS ?? 30000),
+  connectionTimeoutMillis: Number(process.env.PG_CONNECT_TIMEOUT_MS ?? 15000),
+  // Encrypted and certificate-verified (Neon's certs are publicly trusted).
+  ssl: true,
 });
-const db = drizzle(pool, { schema });
 
-// ── AI ────────────────────────────────────────────────────────────────────────
-let ai: GoogleGenAI | null = null;
-try {
-  ai = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY!,
-    httpOptions: { headers: { "User-Agent": "aistudio-build" } },
-  });
-} catch (e: any) {
-  console.error("GoogleGenAI init failed:", e.message);
-}
+// A pool-level error handler is required: without it, an error on an idle client
+// (e.g. the DB dropping the connection) crashes the whole process.
+pool.on("error", (err) => {
+  console.error("Unexpected error on idle pg client:", err.message);
+});
 
-// ── Firebase ──────────────────────────────────────────────────────────────────
-let firebaseInitError: string | null = null;
-let adminAuth: ReturnType<typeof getAuth> | null = null;
-try {
-  if (!getApps().length) {
-    const credential = process.env.FIREBASE_SERVICE_ACCOUNT
-      ? cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
-      : applicationDefault();
-    initializeApp({
-      credential,
-      projectId: process.env.FIREBASE_PROJECT_ID || "project-434b365c-4216-414c-ab2",
-    });
+export const db = drizzle(pool, { schema });
+
+// Lightweight connectivity probe used by both the startup retry and /api/health.
+export async function checkDatabase(): Promise<void> {
+  const client = await pool.connect();
+  try {
+    await client.query("SELECT 1");
+  } finally {
+    client.release();
   }
-  adminAuth = getAuth();
-} catch (e: any) {
-  firebaseInitError = e.message;
-  console.error("Firebase init failed:", e);
 }
 
-// ── Auth middleware ───────────────────────────────────────────────────────────
+// ── Auth (Neon Auth) ──────────────────────────────────────────────────────────
+// The browser signs in against Neon Auth and sends its short-lived JWT as a
+// Bearer token. It's verified locally against Neon Auth's public keys (JWKS),
+// which jose fetches once, caches, and refetches on key rotation, so there is
+// no network call to the auth service per request.
+const NEON_AUTH_URL = process.env.VITE_NEON_AUTH_URL?.replace(/\/+$/, "");
+const jwks = NEON_AUTH_URL ? createRemoteJWKSet(new URL(`${NEON_AUTH_URL}/.well-known/jwks.json`)) : null;
+
 export interface AuthRequest extends Request {
-  user?: DecodedIdToken;
+  user?: { uid: string; email?: string };
 }
 
 const requireAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  if (!adminAuth) {
-    return res.status(500).json({ error: `Firebase not initialized: ${firebaseInitError}` });
+  if (!jwks) {
+    return res.status(500).json({ error: "Auth not configured: VITE_NEON_AUTH_URL is not set" });
   }
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Unauthorized: Missing token" });
   }
-  const token = authHeader.split("Bearer ")[1];
   try {
-    const decodedToken = await adminAuth.verifyIdToken(token);
-    req.user = decodedToken;
-    await db.insert(users).values({ id: decodedToken.uid }).onConflictDoNothing();
-    next();
-  } catch (error) {
-    console.error("Error verifying Firebase ID token:", error);
+    const { payload } = await jwtVerify(authHeader.slice("Bearer ".length), jwks, {
+      issuer: new URL(NEON_AUTH_URL!).origin,
+      algorithms: ["EdDSA", "Ed25519"],
+    });
+    if (!payload.sub) throw new Error("token has no subject");
+    req.user = { uid: payload.sub, email: typeof payload.email === "string" ? payload.email : undefined };
+  } catch (error: any) {
+    console.error("Rejected auth token:", error.code ?? error.message);
     return res.status(401).json({ error: "Unauthorized: Invalid token" });
   }
+  try {
+    await db.insert(users)
+      .values({ id: req.user.uid, userName: req.user.email?.split("@")[0] || "User" })
+      .onConflictDoNothing();
+  } catch (error) {
+    return next(error);
+  }
+  next();
 };
+
+// Request bodies may never set a row's id or owner; the server assigns those.
+const bodyOf = (req: AuthRequest) => {
+  const { id: _id, userId: _userId, ...rest } = req.body ?? {};
+  return rest;
+};
+
+// Matches the row named in the URL only if it belongs to the signed-in user, so
+// one account can never change or delete another account's data.
+const ownedRow = (table: { id: AnyPgColumn; userId: AnyPgColumn }, req: AuthRequest) =>
+  and(eq(table.id, req.params.id), eq(table.userId, req.user!.uid));
 
 // ── Express app ───────────────────────────────────────────────────────────────
 const app = express();
@@ -161,20 +179,17 @@ app.use(express.json());
 
 app.get("/api/health", async (_req, res) => {
   const status: Record<string, any> = {
-    firebase_app: getApps().length > 0,
-    firebase_init_error: firebaseInitError,
-    ai_initialized: !!ai,
+    neon_auth_url: !!NEON_AUTH_URL,
     database_url: !!process.env.DATABASE_URL,
-    firebase_service_account: !!process.env.FIREBASE_SERVICE_ACCOUNT,
-    gemini_api_key: !!process.env.GEMINI_API_KEY,
   };
   try {
-    await db.select().from(users).limit(1);
+    await checkDatabase();
     status.database = "connected";
+    res.status(200).json(status);
   } catch (e: any) {
     status.database = e.message;
+    res.status(503).json(status);
   }
-  res.json(status);
 });
 
 app.get("/api/ledger", requireAuth, async (req: AuthRequest, res) => {
@@ -201,105 +216,114 @@ app.get("/api/ledger", requireAuth, async (req: AuthRequest, res) => {
 
 app.post("/api/entries", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const item = await db.insert(entries).values({ id: crypto.randomUUID(), ...req.body, userId: req.user!.uid }).returning();
+    const item = await db.insert(entries).values({ ...bodyOf(req), id: crypto.randomUUID(), userId: req.user!.uid }).returning();
     res.json(item[0]);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
 app.put("/api/entries/:id", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const item = await db.update(entries).set(req.body).where(eq(entries.id, req.params.id)).returning();
+    const item = await db.update(entries).set(bodyOf(req)).where(ownedRow(entries, req)).returning();
+    if (!item[0]) return res.status(404).json({ error: "Not found" });
     res.json(item[0]);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
 app.delete("/api/entries/:id", requireAuth, async (req: AuthRequest, res) => {
   try {
-    await db.delete(entries).where(eq(entries.id, req.params.id));
+    await db.delete(entries).where(ownedRow(entries, req));
     res.json({ success: true });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
 app.post("/api/bills", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const item = await db.insert(bills).values({ id: crypto.randomUUID(), ...req.body, userId: req.user!.uid }).returning();
+    const item = await db.insert(bills).values({ ...bodyOf(req), id: crypto.randomUUID(), userId: req.user!.uid }).returning();
     res.json(item[0]);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
 app.put("/api/bills/:id", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const item = await db.update(bills).set(req.body).where(eq(bills.id, req.params.id)).returning();
+    const item = await db.update(bills).set(bodyOf(req)).where(ownedRow(bills, req)).returning();
+    if (!item[0]) return res.status(404).json({ error: "Not found" });
     res.json(item[0]);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
 app.delete("/api/bills/:id", requireAuth, async (req: AuthRequest, res) => {
   try {
-    await db.delete(bills).where(eq(bills.id, req.params.id));
+    await db.delete(bills).where(ownedRow(bills, req));
     res.json({ success: true });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
 app.post("/api/holdings", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const item = await db.insert(holdings).values({ id: crypto.randomUUID(), ...req.body, userId: req.user!.uid }).returning();
+    const item = await db.insert(holdings).values({ ...bodyOf(req), id: crypto.randomUUID(), userId: req.user!.uid }).returning();
     res.json(item[0]);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
 app.put("/api/holdings/:id", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const item = await db.update(holdings).set(req.body).where(eq(holdings.id, req.params.id)).returning();
+    const item = await db.update(holdings).set(bodyOf(req)).where(ownedRow(holdings, req)).returning();
+    if (!item[0]) return res.status(404).json({ error: "Not found" });
     res.json(item[0]);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
 app.delete("/api/holdings/:id", requireAuth, async (req: AuthRequest, res) => {
   try {
-    await db.delete(holdings).where(eq(holdings.id, req.params.id));
+    await db.delete(holdings).where(ownedRow(holdings, req));
     res.json({ success: true });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
 app.post("/api/goals", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const item = await db.insert(goals).values({ id: crypto.randomUUID(), ...req.body, userId: req.user!.uid }).returning();
+    const item = await db.insert(goals).values({ ...bodyOf(req), id: crypto.randomUUID(), userId: req.user!.uid }).returning();
     res.json(item[0]);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
 app.put("/api/goals/:id", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const item = await db.update(goals).set(req.body).where(eq(goals.id, req.params.id)).returning();
+    const item = await db.update(goals).set(bodyOf(req)).where(ownedRow(goals, req)).returning();
+    if (!item[0]) return res.status(404).json({ error: "Not found" });
     res.json(item[0]);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
 app.post("/api/debts", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const item = await db.insert(debts).values({ id: crypto.randomUUID(), ...req.body, userId: req.user!.uid }).returning();
+    const item = await db.insert(debts).values({ ...bodyOf(req), id: crypto.randomUUID(), userId: req.user!.uid }).returning();
     res.json(item[0]);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
 app.put("/api/debts/:id", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const item = await db.update(debts).set(req.body).where(eq(debts.id, req.params.id)).returning();
+    const item = await db.update(debts).set(bodyOf(req)).where(ownedRow(debts, req)).returning();
+    if (!item[0]) return res.status(404).json({ error: "Not found" });
     res.json(item[0]);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
 app.delete("/api/debts/:id", requireAuth, async (req: AuthRequest, res) => {
   try {
-    await db.delete(debts).where(eq(debts.id, req.params.id));
+    await db.delete(debts).where(ownedRow(debts, req));
     res.json({ success: true });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
 app.post("/api/payment_history", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const item = await db.insert(paymentHistory).values({ id: crypto.randomUUID(), ...req.body, userId: req.user!.uid }).returning();
+    const payment = bodyOf(req);
+    const debt = await db.select({ id: debts.id }).from(debts)
+      .where(and(eq(debts.id, payment.debtId), eq(debts.userId, req.user!.uid)));
+    if (debt.length === 0) return res.status(404).json({ error: "Debt not found" });
+    const item = await db.insert(paymentHistory).values({ ...payment, id: crypto.randomUUID(), userId: req.user!.uid }).returning();
     res.json(item[0]);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
@@ -307,11 +331,11 @@ app.post("/api/payment_history", requireAuth, async (req: AuthRequest, res) => {
 app.post("/api/accounts", requireAuth, async (req: AuthRequest, res) => {
   try {
     const uid = req.user!.uid;
-    const accountData = { ...req.body };
+    const accountData = bodyOf(req);
     if (accountData.isPrimary) {
       await db.update(accounts).set({ isPrimary: false }).where(eq(accounts.userId, uid));
     }
-    const item = await db.insert(accounts).values({ id: crypto.randomUUID(), ...accountData, userId: uid }).returning();
+    const item = await db.insert(accounts).values({ ...accountData, id: crypto.randomUUID(), userId: uid }).returning();
     res.json(item[0]);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
@@ -319,54 +343,49 @@ app.post("/api/accounts", requireAuth, async (req: AuthRequest, res) => {
 app.put("/api/accounts/:id", requireAuth, async (req: AuthRequest, res) => {
   try {
     const uid = req.user!.uid;
-    const accountData = { ...req.body };
+    const accountData = bodyOf(req);
+    const existing = await db.select().from(accounts).where(ownedRow(accounts, req));
+    if (existing.length === 0) return res.status(404).json({ error: "Not found" });
     if (accountData.isPrimary) {
       await db.update(accounts).set({ isPrimary: false }).where(eq(accounts.userId, uid));
     }
-    const existing = await db.select().from(accounts).where(eq(accounts.id, req.params.id));
-    if (existing.length > 0) {
-      if (
-        (accountData.balance !== undefined && accountData.balance !== existing[0].balance) ||
-        (accountData.availableBalance !== undefined && accountData.availableBalance !== existing[0].availableBalance)
-      ) {
-        accountData.balanceUpdatedAt = new Date();
-      }
+    if (
+      (accountData.balance !== undefined && accountData.balance !== existing[0].balance) ||
+      (accountData.availableBalance !== undefined && accountData.availableBalance !== existing[0].availableBalance)
+    ) {
+      accountData.balanceUpdatedAt = new Date();
     }
-    const item = await db.update(accounts).set(accountData).where(eq(accounts.id, req.params.id)).returning();
+    const item = await db.update(accounts).set(accountData).where(ownedRow(accounts, req)).returning();
     res.json(item[0]);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
 app.delete("/api/accounts/:id", requireAuth, async (req: AuthRequest, res) => {
   try {
-    await db.delete(accounts).where(eq(accounts.id, req.params.id));
+    await db.delete(accounts).where(ownedRow(accounts, req));
     res.json({ success: true });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
-app.post("/api/insights", requireAuth, async (req: AuthRequest, res) => {
-  try {
-    if (!ai) return res.status(503).json({ error: "AI service not configured." });
-    const { prompt } = req.body;
-    let response;
-    try {
-      response = await ai.models.generateContent({ model: "gemini-3.5-flash", contents: prompt });
-    } catch (e: any) {
-      if (e?.status === 503 || e?.error?.status === "UNAVAILABLE" || e?.error?.code === 429 || e?.status === 429) {
-        response = await ai.models.generateContent({ model: "gemini-3.1-flash-lite", contents: prompt });
-      } else { throw e; }
-    }
-    res.json({ text: response.text });
-  } catch (e: any) {
-    res.status(429).json({ error: "AI models are currently experiencing high demand. Please try again later." });
-  }
-});
-
 app.put("/api/users/profile", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const item = await db.update(users).set(req.body).where(eq(users.id, req.user!.uid)).returning();
+    const item = await db.update(users).set(bodyOf(req)).where(eq(users.id, req.user!.uid)).returning();
     res.json(item[0]);
   } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// ── Final error handler ─────────────────────────────────────────────────────────
+// Express treats a 4-arg middleware as an error handler. Registered last so any
+// error passed to next(err) — or a JSON body-parse failure, or a sync throw in a
+// handler — returns a clean response instead of hanging the request or crashing.
+// Client errors raised by middleware (e.g. malformed JSON → 400) keep their status.
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  if (res.headersSent) return _next(err);
+  if (err.status >= 400 && err.status < 500) {
+    return res.status(err.status).json({ error: err.message });
+  }
+  console.error("Unhandled route error:", err);
+  res.status(500).json({ error: "Internal server error" });
 });
 
 export default app;

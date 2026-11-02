@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Entry, Bill, Goal, Account, Debt } from '../../types';
-import { api } from '../../lib/api';
 import BarChart from '../BarChart';
 import DonutChart from '../DonutChart';
 import { 
@@ -12,9 +11,7 @@ import {
   CheckSquare, 
   Square,
   TrendingUp,
-  AlertCircle,
-  Sparkles,
-  Loader2
+  AlertCircle
 } from 'lucide-react';
 
 interface DashboardViewProps {
@@ -198,41 +195,12 @@ export default function DashboardView({
     .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id))
     .slice(0, 5);
 
-  const [insights, setInsights] = useState<string | null>(null);
-  const [isLoadingInsights, setIsLoadingInsights] = useState(false);
-
-  useEffect(() => {
-    async function fetchInsights() {
-      if (recentTransactions.length === 0) return;
-      setIsLoadingInsights(true);
-      try {
-        const prompt = `Analyze these recent transactions and provide a single-sentence financial insight or spending warning:
-${recentTransactions.map(t => `- ${t.name} (${t.category}): ₹${t.amount}`).join('\n')}
-
-Monthly expenses by category:
-${Object.entries(currentMonthExpensesByCategory).map(([cat, amt]) => `- ${cat}: ₹${amt}`).join('\n')}
-
-Keep the insight to one concise, direct sentence.`;
-        const res = await api.generateInsights(prompt);
-        setInsights(res.text);
-      } catch (err: any) {
-        if (!err.message?.includes("high demand")) {
-          console.error("Failed to fetch insights:", err);
-        }
-        setInsights("AI insights are temporarily unavailable due to high demand. Please check back later.");
-      } finally {
-        setIsLoadingInsights(false);
-      }
-    }
-    fetchInsights();
-  }, [recentTransactions.map(t => t.id).join(',')]); // re-run if top 5 changes
-
   return (
     <div className="space-y-6">
       {/* 1. HEADER ROW */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-gray-200 dark:border-gray-800">
         <div>
-          <span className="font-sans text-[10px] uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 dark:text-gray-500">
+          <span className="font-sans text-[10px] uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">
             {getGreeting()}
           </span>
           <h1 className="font-sans font-semibold text-xl text-gray-900 dark:text-gray-50 mt-0.5 tracking-tight">
@@ -254,33 +222,13 @@ Keep the insight to one concise, direct sentence.`;
               );
             })}
           </select>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg font-sans text-[11px] text-gray-500 dark:text-gray-400 dark:text-gray-500 shadow-sm">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg font-sans text-[11px] text-gray-500 dark:text-gray-400 shadow-sm">
             <Calendar size={12} className="text-blue-600" />
             <span>{getFormattedDate()}</span>
             <span className="text-[#6B6E73] ml-1">|</span>
             <Clock size={12} className="text-[#6B6E73]" />
             <span>10:46 UTC-7</span>
           </div>
-        </div>
-      </div>
-
-      {/* GEMINI FINANCIAL INSIGHTS */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 border border-blue-100 dark:border-blue-900/30 p-4 rounded-xl flex items-start sm:items-center gap-4">
-        <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg shrink-0">
-          <Sparkles className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-        </div>
-        <div className="flex-1">
-          <h3 className="font-sans text-sm font-semibold text-blue-900 dark:text-blue-100 mb-0.5">AI Financial Insight</h3>
-          {isLoadingInsights ? (
-            <div className="flex items-center gap-2 text-blue-700/70 dark:text-blue-300/70">
-              <Loader2 className="w-3 h-3 animate-spin" />
-              <span className="text-xs font-medium">Analyzing spending patterns...</span>
-            </div>
-          ) : (
-            <p className="font-sans text-sm text-blue-800 dark:text-blue-200 leading-relaxed">
-              {insights || "No recent transactions to analyze."}
-            </p>
-          )}
         </div>
       </div>
 
@@ -337,7 +285,7 @@ Keep the insight to one concise, direct sentence.`;
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Net Worth */}
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm p-5 rounded-2xl flex flex-col justify-between min-h-[100px] group relative cursor-help">
-          <span className="font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium">
+          <span className="font-sans text-xs text-gray-500 dark:text-gray-400 font-medium">
             Net Worth
           </span>
           <div className="mt-2 flex flex-col gap-1">
@@ -363,7 +311,7 @@ Keep the insight to one concise, direct sentence.`;
 
         {/* Card 2: Monthly Spend */}
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm p-5 rounded-2xl flex flex-col justify-between min-h-[100px]">
-          <span className="font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium">
+          <span className="font-sans text-xs text-gray-500 dark:text-gray-400 font-medium">
             Monthly Spend <span className="text-[10px] text-gray-400 dark:text-gray-500 font-normal">(Jun)</span>
           </span>
           <div className="mt-2 flex flex-col gap-1">
@@ -378,7 +326,7 @@ Keep the insight to one concise, direct sentence.`;
 
         {/* Card 3: Investments Balance */}
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm p-5 rounded-2xl flex flex-col justify-between min-h-[100px]">
-          <span className="font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium">
+          <span className="font-sans text-xs text-gray-500 dark:text-gray-400 font-medium">
             Investment Portfolio
           </span>
           <div className="mt-2 flex flex-col gap-1">
@@ -431,7 +379,7 @@ Keep the insight to one concise, direct sentence.`;
             <h3 className="font-sans font-semibold text-sm text-gray-900 dark:text-gray-50 uppercase tracking-wide">
               Monthly Expenditure Trend (6M)
             </h3>
-            <div className="flex gap-4 text-xs font-sans font-medium text-gray-500 dark:text-gray-400 dark:text-gray-500">
+            <div className="flex gap-4 text-xs font-sans font-medium text-gray-500 dark:text-gray-400">
               <span className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 bg-gray-300 rounded-full" /> Past
               </span>
@@ -487,11 +435,11 @@ Keep the insight to one concise, direct sentence.`;
                 {recentTransactions.map((entry) => {
                   const isIncome = entry.type === 'income';
                   return (
-                    <tr key={entry.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800/50/50 transition-colors">
+                    <tr key={entry.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800/50 transition-colors">
                       <td className="py-3 text-sm text-gray-900 dark:text-gray-50 font-medium pr-2 max-w-[150px] truncate">
                         {entry.name}
                       </td>
-                      <td className="py-3 text-[11px] text-gray-500 dark:text-gray-400 dark:text-gray-500 font-sans">
+                      <td className="py-3 text-[11px] text-gray-500 dark:text-gray-400 font-sans">
                         <span className="px-2 py-0.5 rounded-md bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800">
                           {entry.category}
                         </span>
@@ -520,7 +468,7 @@ Keep the insight to one concise, direct sentence.`;
           
           <button 
             onClick={() => onNavigateToTab('transactions')}
-            className="w-full text-center text-[11px] font-sans font-medium text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:text-blue-600 mt-3.5 pt-3 border-t border-gray-100 dark:border-gray-800/50 transition-colors"
+            className="w-full text-center text-[11px] font-sans font-medium text-gray-500 dark:text-gray-400 hover:text-blue-600 mt-3.5 pt-3 border-t border-gray-100 dark:border-gray-800/50 transition-colors"
           >
             View full history &rarr;
           </button>
