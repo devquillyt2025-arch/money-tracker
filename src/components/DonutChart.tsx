@@ -74,7 +74,7 @@ export default function DonutChart({ categoryData }: DonutChartProps) {
       {/* Donut graphic */}
       <div className="relative w-36 h-36 flex items-center justify-center">
         {total === 0 ? (
-          <div className="text-center font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500">
+          <div className="text-center font-sans text-xs text-gray-500 dark:text-gray-400">
             No data
           </div>
         ) : (
@@ -122,14 +122,14 @@ export default function DonutChart({ categoryData }: DonutChartProps) {
 
             {/* Inner text area */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-2">
-              <span className="text-[10px] uppercase font-sans font-semibold tracking-wider text-gray-500 dark:text-gray-400 dark:text-gray-500 truncate w-full">
+              <span className="text-[10px] uppercase font-sans font-semibold tracking-wider text-gray-500 dark:text-gray-400 truncate w-full">
                 {hoveredIdx !== null ? segments[hoveredIdx].name : 'Total'}
               </span>
               <span className="font-sans text-sm font-bold text-gray-900 dark:text-gray-50 mt-0.5">
                 ₹{(hoveredIdx !== null ? segments[hoveredIdx].amount : total).toLocaleString('en-IN')}
               </span>
               {hoveredIdx !== null && (
-                <span className="font-sans font-medium text-[10px] text-gray-500 dark:text-gray-400 dark:text-gray-500 mt-0.5">
+                <span className="font-sans font-medium text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
                   {segments[hoveredIdx].percentage.toFixed(0)}%
                 </span>
               )}
@@ -140,11 +140,11 @@ export default function DonutChart({ categoryData }: DonutChartProps) {
 
       {/* Legend list */}
       <div className="flex-1 w-full space-y-3 font-sans">
-        <h4 className="text-[10px] font-sans font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 dark:text-gray-500 border-b border-gray-100 dark:border-gray-800/50 pb-2 mb-3">
+        <h4 className="text-[10px] font-sans font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-800/50 pb-2 mb-3">
           Category Distribution
         </h4>
         {segments.length === 0 ? (
-          <div className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500 italic font-medium">No active expenditure.</div>
+          <div className="text-sm text-gray-500 dark:text-gray-400 italic font-medium">No active expenditure.</div>
         ) : (
           <div className="space-y-2">
             {segments.map((seg, idx) => {

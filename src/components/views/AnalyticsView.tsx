@@ -345,7 +345,7 @@ export default function AnalyticsView({ entries, bills = [] }: AnalyticsViewProp
       {/* 1. HEADER ROW */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-gray-200 dark:border-gray-800 pb-4">
         <div>
-          <span className="font-sans text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium">
+          <span className="font-sans text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400 font-medium">
             Diagnostics Engine
           </span>
           <h1 className="font-sans font-semibold text-xl text-gray-900 dark:text-gray-50 mt-0.5 tracking-tight">
@@ -381,52 +381,52 @@ export default function AnalyticsView({ entries, bills = [] }: AnalyticsViewProp
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* Core Savings Rate */}
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 rounded-2xl shadow-sm">
-          <span className="font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-medium">
+          <span className="font-sans text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider block font-medium">
             Savings Rate ({new Date(parseInt(selectedMonth.split('-')[0]), parseInt(selectedMonth.split('-')[1]) - 1).toLocaleString('default', { month: 'short', year: 'numeric' })})
           </span>
           <span className="font-sans text-2xl font-bold text-green-600 dark:text-green-400 block mt-2">
             {currentMonthSavingsRate.toFixed(1)}%
           </span>
-          <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mt-1.5">
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-1.5">
             Lifetime Avg: {totalSavingsRate.toFixed(1)}%
           </p>
         </div>
 
         {/* Avg Monthly Capital Burn */}
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 rounded-2xl shadow-sm">
-          <span className="font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-medium">
+          <span className="font-sans text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider block font-medium">
             Avg Monthly Capital Burn
           </span>
           <span className="font-sans text-2xl font-bold text-red-600 dark:text-red-400 block mt-2">
             ₹{Math.round(avgMonthlyBurn).toLocaleString('en-IN')}
           </span>
-          <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mt-1.5">
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-1.5">
             Spanning {totalMonthsCount} Accounting Months
           </p>
         </div>
 
         {/* Net Cashflow positive index */}
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 rounded-2xl shadow-sm">
-          <span className="font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-medium">
+          <span className="font-sans text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider block font-medium">
             Cashflow Gain (June)
           </span>
           <span className={`font-sans text-2xl font-bold block mt-2 ${currentMonthSavings >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
             {currentMonthSavings >= 0 ? '+' : ''}₹{currentMonthSavings.toLocaleString('en-IN')}
           </span>
-          <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mt-1.5">
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-1.5">
             Income ₹{currentMonthIncome.toLocaleString('en-IN')}
           </p>
         </div>
 
         {/* Peak Expenditure Category */}
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 rounded-2xl shadow-sm">
-          <span className="font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 uppercase tracking-wider block font-medium">
+          <span className="font-sans text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider block font-medium">
             Peak Outflow Category
           </span>
           <span className="font-sans text-lg font-bold text-gray-900 dark:text-gray-50 block mt-2 truncate">
             {maxExpenseCategory?.amount > 0 ? maxExpenseCategory.name : 'N/A'}
           </span>
-          <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mt-1.5 truncate">
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-1.5 truncate">
             {maxExpenseCategory?.amount > 0 ? `₹${maxExpenseCategory.amount.toLocaleString('en-IN')} Outflowed` : 'No expenses logged'}
           </p>
         </div>
@@ -440,7 +440,7 @@ export default function AnalyticsView({ entries, bills = [] }: AnalyticsViewProp
             <h3 className="font-sans font-semibold text-sm text-gray-900 dark:text-gray-50 uppercase tracking-wide">
               Category Burn Breakdown ({new Date(parseInt(selectedMonth.split('-')[0]), parseInt(selectedMonth.split('-')[1]) - 1).toLocaleString('default', { month: 'short', year: 'numeric' })})
             </h3>
-            <span className="font-sans font-medium text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500">
+            <span className="font-sans font-medium text-xs text-gray-500 dark:text-gray-400">
               Total Outflow: ₹{currentMonthExpense.toLocaleString('en-IN')}
             </span>
           </div>
@@ -456,7 +456,7 @@ export default function AnalyticsView({ entries, bills = [] }: AnalyticsViewProp
                       {item.name}
                     </span>
                     <span className="font-sans font-semibold text-gray-900 dark:text-gray-50">
-                      ₹{item.amount.toLocaleString('en-IN')} <span className="text-xs font-medium text-gray-500 dark:text-gray-400 dark:text-gray-500 ml-1">({item.percentage.toFixed(1)}%)</span>
+                      ₹{item.amount.toLocaleString('en-IN')} <span className="text-xs font-medium text-gray-500 dark:text-gray-400 ml-1">({item.percentage.toFixed(1)}%)</span>
                     </span>
                   </div>
                   

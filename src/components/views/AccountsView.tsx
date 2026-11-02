@@ -310,7 +310,7 @@ export default function AccountsView({
       {/* Accounts List */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {processedAccounts.map(account => (
-          <div key={account.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 rounded-2xl shadow-sm hover:border-blue-200 dark:border-blue-800 transition-colors">
+          <div key={account.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 rounded-2xl shadow-sm hover:border-blue-200 dark:hover:border-blue-800 transition-colors">
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
@@ -333,14 +333,14 @@ export default function AccountsView({
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => openEditModal(account)}
-                  className="p-2 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-900/20 rounded-xl transition-colors"
+                  className="p-2 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-colors"
                   title="Edit"
                 >
                   <Edit2 size={16} />
                 </button>
                 <button
                   onClick={() => onDeleteAccount(account.id)}
-                  className="p-2 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-900/20 rounded-xl transition-colors"
+                  className="p-2 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
                   title="Delete"
                 >
                   <Trash2 size={16} />
@@ -378,7 +378,7 @@ export default function AccountsView({
               <h3 className="text-lg font-sans font-semibold text-gray-900 dark:text-gray-50">
                 {editingAccountId ? 'Edit Account' : 'Add New Account'}
               </h3>
-              <button onClick={() => setIsAddOpen(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:text-gray-50">
+              <button onClick={() => setIsAddOpen(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-50">
                 <Plus size={20} className="rotate-45" />
               </button>
             </div>

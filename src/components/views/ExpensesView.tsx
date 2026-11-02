@@ -221,7 +221,7 @@ export default function ExpensesView({
       {/* 1. HEADER & ACTION ROW */}
       <div className="flex justify-between items-center pb-4 border-b border-gray-200 dark:border-gray-800">
         <div>
-          <span className="font-sans text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium">
+          <span className="font-sans text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400 font-medium">
             Ledger Data
           </span>
           <h1 className="font-sans font-semibold text-xl text-gray-900 dark:text-gray-50 mt-0.5 tracking-tight">
@@ -252,7 +252,7 @@ export default function ExpensesView({
 
         {/* Category Filter */}
         <div className="flex items-center gap-2">
-          <span className="font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium shrink-0">Cat:</span>
+          <span className="font-sans text-xs text-gray-500 dark:text-gray-400 font-medium shrink-0">Cat:</span>
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
@@ -267,7 +267,7 @@ export default function ExpensesView({
 
         {/* Type Filter */}
         <div className="flex items-center gap-2">
-          <span className="font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium shrink-0">Type:</span>
+          <span className="font-sans text-xs text-gray-500 dark:text-gray-400 font-medium shrink-0">Type:</span>
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
@@ -285,10 +285,10 @@ export default function ExpensesView({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-800 text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400 dark:text-gray-500 font-sans bg-gray-50 dark:bg-gray-800/50/50">
+              <tr className="border-b border-gray-200 dark:border-gray-800 text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-sans bg-gray-50 dark:bg-gray-800/50">
                 <th 
                   onClick={() => handleSort('name')}
-                  className="py-3 px-5 font-semibold cursor-pointer select-none hover:text-gray-900 dark:text-gray-50"
+                  className="py-3 px-5 font-semibold cursor-pointer select-none hover:text-gray-900 dark:hover:text-gray-50"
                 >
                   <div className="flex items-center gap-1.5">
                     Particular / Description
@@ -299,7 +299,7 @@ export default function ExpensesView({
                 </th>
                 <th 
                   onClick={() => handleSort('category')}
-                  className="py-3 px-5 font-semibold cursor-pointer select-none hover:text-gray-900 dark:text-gray-50"
+                  className="py-3 px-5 font-semibold cursor-pointer select-none hover:text-gray-900 dark:hover:text-gray-50"
                 >
                   <div className="flex items-center gap-1.5">
                     Category
@@ -310,7 +310,7 @@ export default function ExpensesView({
                 </th>
                 <th 
                   onClick={() => handleSort('date')}
-                  className="py-3 px-5 font-semibold cursor-pointer select-none hover:text-gray-900 dark:text-gray-50 font-sans"
+                  className="py-3 px-5 font-semibold cursor-pointer select-none hover:text-gray-900 dark:hover:text-gray-50 font-sans"
                 >
                   <div className="flex items-center gap-1.5">
                     Date
@@ -321,7 +321,7 @@ export default function ExpensesView({
                 </th>
                 <th 
                   onClick={() => handleSort('amount')}
-                  className="py-3 px-5 font-semibold cursor-pointer select-none hover:text-gray-900 dark:text-gray-50 font-sans text-right"
+                  className="py-3 px-5 font-semibold cursor-pointer select-none hover:text-gray-900 dark:hover:text-gray-50 font-sans text-right"
                 >
                   <div className="flex items-center gap-1.5 justify-end">
                     Amount
@@ -337,11 +337,11 @@ export default function ExpensesView({
               {sortedEntries.map((entry) => {
                 const isIncome = entry.type === 'income';
                 return (
-                  <tr key={entry.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800/50/50 transition-colors">
+                  <tr key={entry.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800/50 transition-colors">
                     <td className="py-3 px-5 text-sm text-gray-900 dark:text-gray-50 font-medium max-w-[200px] truncate">
                       {entry.name}
                     </td>
-                    <td className="py-3 px-5 text-[11px] text-gray-500 dark:text-gray-400 dark:text-gray-500">
+                    <td className="py-3 px-5 text-[11px] text-gray-500 dark:text-gray-400">
                       <span className="px-2 py-0.5 rounded-md bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800">
                         {entry.category}
                       </span>
@@ -358,14 +358,14 @@ export default function ExpensesView({
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => startEdit(entry)}
-                          className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-blue-600 rounded-md hover:bg-gray-100 dark:bg-gray-800 transition-colors"
+                          className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-blue-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                           title="Edit transaction entry"
                         >
                           <Edit3 size={14} />
                         </button>
                         <button
                           onClick={() => onDeleteEntry(entry.id)}
-                          className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:text-red-400 rounded-md hover:bg-gray-100 dark:bg-gray-800 transition-colors"
+                          className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                           title="Delete transaction entry"
                         >
                           <Trash2 size={14} />
@@ -385,7 +385,7 @@ export default function ExpensesView({
             </tbody>
           </table>
         </div>
-        <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 flex justify-between items-center text-xs font-sans text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium">
+        <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 flex justify-between items-center text-xs font-sans text-gray-500 dark:text-gray-400 font-medium">
           <span>Total Query Match: {sortedEntries.length} records</span>
           <span>Cloud Sync Active</span>
         </div>
@@ -403,7 +403,7 @@ export default function ExpensesView({
               </span>
               <button 
                 onClick={() => setIsAddModalOpen(false)}
-                className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:text-gray-50"
+                className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-50"
               >
                 <X size={18} />
               </button>
@@ -418,7 +418,7 @@ export default function ExpensesView({
 
               {/* Description name */}
               <div>
-                <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
                   Particular / Name
                 </label>
                 <input
@@ -433,7 +433,7 @@ export default function ExpensesView({
               {/* Amount & Type row */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
                     Amount (₹)
                   </label>
                   <input
@@ -445,7 +445,7 @@ export default function ExpensesView({
                   />
                 </div>
                 <div>
-                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
                     Flow direction
                   </label>
                   <div className="grid grid-cols-2 gap-1 p-1 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 rounded-xl">
@@ -455,7 +455,7 @@ export default function ExpensesView({
                       className={`py-1.5 rounded-lg text-xs font-sans font-medium transition-colors ${
                         formType === 'expense' 
                           ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-semibold shadow-sm' 
-                          : 'text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:text-gray-50'
+                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50'
                       }`}
                     >
                       Out (-)
@@ -466,7 +466,7 @@ export default function ExpensesView({
                       className={`py-1.5 rounded-lg text-xs font-sans font-medium transition-colors ${
                         formType === 'income' 
                           ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 font-semibold shadow-sm' 
-                          : 'text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:text-gray-50'
+                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50'
                       }`}
                     >
                       In (+)
@@ -478,7 +478,7 @@ export default function ExpensesView({
               {/* Category & Date */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
                     Category
                   </label>
                   <select
@@ -507,7 +507,7 @@ export default function ExpensesView({
                   )}
                 </div>
                 <div>
-                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
                     Record Date
                   </label>
                   <input
@@ -524,7 +524,7 @@ export default function ExpensesView({
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800/50 text-sm font-sans font-medium text-gray-700 dark:text-gray-200 rounded-xl transition-colors"
+                  className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-sans font-medium text-gray-700 dark:text-gray-200 rounded-xl transition-colors"
                 >
                   Cancel
                 </button>
@@ -550,7 +550,7 @@ export default function ExpensesView({
               </span>
               <button 
                 onClick={cancelEdit}
-                className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:text-gray-50"
+                className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-50"
               >
                 <X size={18} />
               </button>
@@ -565,7 +565,7 @@ export default function ExpensesView({
 
               {/* Description name */}
               <div>
-                <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
                   Particular / Name
                 </label>
                 <input
@@ -579,7 +579,7 @@ export default function ExpensesView({
               {/* Amount & Type row */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
                     Amount (₹)
                   </label>
                   <input
@@ -590,7 +590,7 @@ export default function ExpensesView({
                   />
                 </div>
                 <div>
-                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
                     Flow direction
                   </label>
                   <div className="grid grid-cols-2 gap-1 p-1 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 rounded-xl">
@@ -600,7 +600,7 @@ export default function ExpensesView({
                       className={`py-1.5 rounded-lg text-xs font-sans font-medium transition-colors ${
                         formType === 'expense' 
                           ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-semibold shadow-sm' 
-                          : 'text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:text-gray-50'
+                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50'
                       }`}
                     >
                       Out (-)
@@ -611,7 +611,7 @@ export default function ExpensesView({
                       className={`py-1.5 rounded-lg text-xs font-sans font-medium transition-colors ${
                         formType === 'income' 
                           ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 font-semibold shadow-sm' 
-                          : 'text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:text-gray-50'
+                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50'
                       }`}
                     >
                       In (+)
@@ -623,7 +623,7 @@ export default function ExpensesView({
               {/* Category & Date */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
                     Category
                   </label>
                   <select
@@ -652,7 +652,7 @@ export default function ExpensesView({
                   )}
                 </div>
                 <div>
-                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
                     Record Date
                   </label>
                   <input
@@ -669,7 +669,7 @@ export default function ExpensesView({
                 <button
                   type="button"
                   onClick={cancelEdit}
-                  className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800/50 text-sm font-sans font-medium text-gray-700 dark:text-gray-200 rounded-xl transition-colors"
+                  className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-sans font-medium text-gray-700 dark:text-gray-200 rounded-xl transition-colors"
                 >
                   Cancel
                 </button>

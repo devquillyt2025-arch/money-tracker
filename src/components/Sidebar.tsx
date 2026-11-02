@@ -48,7 +48,7 @@ export default function Sidebar({
   const renderNavSection = (sectionName: string, items: typeof navItems) => {
     return (
       <div key={sectionName} className="mb-6">
-        <h3 className="px-3 mb-2 text-[10px] font-medium uppercase tracking-[0.15em] text-gray-500 dark:text-gray-400 dark:text-gray-500">
+        <h3 className="px-3 mb-2 text-[10px] font-medium uppercase tracking-[0.15em] text-gray-500 dark:text-gray-400">
           {sectionName}
         </h3>
         <div className="space-y-1">
@@ -63,7 +63,7 @@ export default function Sidebar({
                 className={`w-full flex items-center gap-3 px-3 py-2 text-sm rounded-xl transition-all duration-150 text-left font-sans ${
                   isActive 
                     ? 'bg-white dark:bg-gray-900 text-blue-600 font-semibold shadow-sm border border-gray-100 dark:border-gray-800/50' 
-                    : 'text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:text-gray-50 hover:bg-gray-200/50 border border-transparent'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50 hover:bg-gray-200/50 border border-transparent'
                 }`}
               >
                 <Icon 
@@ -111,7 +111,7 @@ export default function Sidebar({
           </div>
           <button 
             onClick={() => setIsMobileOpen(false)}
-            className="p-1 text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:text-gray-50 lg:hidden"
+            className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50 lg:hidden"
           >
             <X size={16} />
           </button>

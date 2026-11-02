@@ -249,7 +249,7 @@ export default function GoalsView({
       {/* 1. HEADER ROW */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-gray-200 dark:border-gray-800 pb-4">
         <div>
-          <span className="font-sans text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium">
+          <span className="font-sans text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400 font-medium">
             Capital Targets Board
           </span>
           <h1 className="font-sans font-semibold text-xl text-gray-900 dark:text-gray-50 mt-0.5 tracking-tight">
@@ -262,7 +262,7 @@ export default function GoalsView({
               setContribType('primary');
               setIsContribOpen(true);
             }}
-            className="flex items-center gap-2 text-sm font-sans text-blue-600 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:bg-blue-900/40 font-medium px-4 py-2 rounded-xl transition-colors shadow-sm"
+            className="flex items-center gap-2 text-sm font-sans text-blue-600 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/40 font-medium px-4 py-2 rounded-xl transition-colors shadow-sm"
           >
             <Layers size={16} /> Contribute
           </button>
@@ -306,7 +306,7 @@ export default function GoalsView({
               setPrimaryCurrent(String(primaryGoal.currentAmount));
               setIsEditPrimaryOpen(true);
             }}
-            className="text-xs font-sans text-gray-500 dark:text-gray-400 dark:text-gray-500 hover:text-blue-600 border border-gray-200 dark:border-gray-800 hover:border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 dark:bg-blue-900/20 bg-gray-50 dark:bg-gray-800/50 px-3 py-1.5 rounded-lg transition-colors font-medium"
+            className="text-xs font-sans text-gray-500 dark:text-gray-400 hover:text-blue-600 border border-gray-200 dark:border-gray-800 hover:border-blue-200 dark:hover:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 bg-gray-50 dark:bg-gray-800/50 px-3 py-1.5 rounded-lg transition-colors font-medium"
           >
             Edit Parameters
           </button>
@@ -421,13 +421,13 @@ export default function GoalsView({
                 key={g.id} 
                 className={`p-5 rounded-2xl bg-white dark:bg-gray-900 border transition-all shadow-sm ${
                   isCompleted 
-                    ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20/30' 
-                    : 'border-gray-200 dark:border-gray-800 hover:border-blue-200 dark:border-blue-800 hover:shadow-md'
+                    ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20' 
+                    : 'border-gray-200 dark:border-gray-800 hover:border-blue-200 dark:hover:border-blue-800 hover:shadow-md'
                 }`}
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <span className="text-[10px] font-sans font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 dark:text-gray-500 px-2 py-0.5 rounded-md bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800">
+                    <span className="text-[10px] font-sans font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-md bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800">
                       {g.category}
                     </span>
                     <h4 className="font-sans font-semibold text-gray-900 dark:text-gray-50 mt-2 truncate max-w-[200px]">
@@ -465,7 +465,7 @@ export default function GoalsView({
                     <span className="text-gray-200 dark:text-gray-700">|</span>
                     <button
                       onClick={() => handleDeleteAux(g.id)}
-                      className="text-gray-400 dark:text-gray-500 hover:text-red-600 dark:text-red-400 transition-colors"
+                      className="text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                       title="Delete goal"
                     >
                       <Trash2 size={16} />
@@ -476,7 +476,7 @@ export default function GoalsView({
                 {/* Progress details */}
                 <div className="mt-5 space-y-2">
                   <div className="flex justify-between items-end font-sans text-xs font-medium">
-                    <span className="text-gray-500 dark:text-gray-400 dark:text-gray-500">Progress</span>
+                    <span className="text-gray-500 dark:text-gray-400">Progress</span>
                     <span className={isCompleted ? 'text-green-600 dark:text-green-400 font-bold' : 'text-gray-900 dark:text-gray-50'}>
                       ₹{g.currentAmount.toLocaleString('en-IN')} / ₹{g.targetAmount.toLocaleString('en-IN')} ({pct}%)
                     </span>
@@ -489,7 +489,7 @@ export default function GoalsView({
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <div className="flex justify-between text-[10px] font-sans font-medium text-gray-500 dark:text-gray-400 dark:text-gray-500">
+                  <div className="flex justify-between text-[10px] font-sans font-medium text-gray-500 dark:text-gray-400">
                     <span>Target by: {g.deadline}</span>
                     <span>{isCompleted ? 'Completed' : `₹${Math.round((g.targetAmount - g.currentAmount))} remaining`}</span>
                   </div>
@@ -498,7 +498,7 @@ export default function GoalsView({
             );
           })}
           {auxGoals.length === 0 && (
-            <div className="md:col-span-2 text-center py-10 bg-gray-50 dark:bg-gray-800/50 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl text-sm font-medium text-gray-500 dark:text-gray-400 dark:text-gray-500">
+            <div className="md:col-span-2 text-center py-10 bg-gray-50 dark:bg-gray-800/50 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl text-sm font-medium text-gray-500 dark:text-gray-400">
               No secondary goals loaded. Initialize one above.
             </div>
           )}
@@ -515,13 +515,13 @@ export default function GoalsView({
               <span className="font-sans text-sm text-gray-900 dark:text-gray-50 font-semibold tracking-wide">
                 Edit Primary Target
               </span>
-              <button onClick={() => setIsEditPrimaryOpen(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:text-gray-50 transition-colors">
+              <button onClick={() => setIsEditPrimaryOpen(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-50 transition-colors">
                 <X size={18} />
               </button>
             </div>
             <form onSubmit={handleUpdatePrimary} className="p-5 space-y-5 font-sans">
               <div>
-                <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
                   Goal / Fund Name
                 </label>
                 <input
@@ -533,7 +533,7 @@ export default function GoalsView({
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
                     Target Capital (₹)
                   </label>
                   <input
@@ -544,7 +544,7 @@ export default function GoalsView({
                   />
                 </div>
                 <div>
-                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
                     Current Balance (₹)
                   </label>
                   <input
@@ -556,7 +556,7 @@ export default function GoalsView({
                 </div>
               </div>
               <div>
-                <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
                   Target Date (Optional)
                 </label>
                 <input
@@ -570,7 +570,7 @@ export default function GoalsView({
                 <button
                   type="button"
                   onClick={() => setIsEditPrimaryOpen(false)}
-                  className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800/50 text-sm font-sans font-medium text-gray-700 dark:text-gray-200 rounded-xl transition-colors"
+                  className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-sans font-medium text-gray-700 dark:text-gray-200 rounded-xl transition-colors"
                 >
                   Cancel
                 </button>
@@ -594,7 +594,7 @@ export default function GoalsView({
               <span className="font-sans text-sm text-gray-900 dark:text-gray-50 font-semibold tracking-wide">
                 Contribute to Goal
               </span>
-              <button onClick={() => setIsContribOpen(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:text-gray-50 transition-colors">
+              <button onClick={() => setIsContribOpen(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-50 transition-colors">
                 <X size={18} />
               </button>
             </div>
@@ -607,7 +607,7 @@ export default function GoalsView({
               )}
 
               <div>
-                <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
                   Destination Fund
                 </label>
                 <select
@@ -623,7 +623,7 @@ export default function GoalsView({
               </div>
 
               <div>
-                <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
                   Deposit Contribution Amount (₹)
                 </label>
                 <input
@@ -635,7 +635,7 @@ export default function GoalsView({
                 />
               </div>
 
-              <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium">
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                 Note: Depositing savings capital will add a recorded expenditure entry named 'Cap Contrib' in your core transactions ledger.
               </p>
 
@@ -643,7 +643,7 @@ export default function GoalsView({
                 <button
                   type="button"
                   onClick={() => setIsContribOpen(false)}
-                  className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800/50 text-sm font-sans font-medium text-gray-700 dark:text-gray-200 rounded-xl transition-colors"
+                  className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-sans font-medium text-gray-700 dark:text-gray-200 rounded-xl transition-colors"
                 >
                   Cancel
                 </button>
@@ -667,7 +667,7 @@ export default function GoalsView({
               <span className="font-sans text-sm text-gray-900 dark:text-gray-50 font-semibold tracking-wide">
                 {editingAuxId ? 'Edit Auxiliary Goal' : 'Initialize Auxiliary Goal'}
               </span>
-              <button onClick={() => setIsAddAuxOpen(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:text-gray-50 transition-colors">
+              <button onClick={() => setIsAddAuxOpen(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-50 transition-colors">
                 <X size={18} />
               </button>
             </div>
@@ -680,7 +680,7 @@ export default function GoalsView({
               )}
 
               <div>
-                <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
                   Savings Goal Title
                 </label>
                 <input
@@ -694,7 +694,7 @@ export default function GoalsView({
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
                     Target Amount (₹)
                   </label>
                   <input
@@ -706,7 +706,7 @@ export default function GoalsView({
                   />
                 </div>
                 <div>
-                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
                     Starting Amount (₹)
                   </label>
                   <input
@@ -721,7 +721,7 @@ export default function GoalsView({
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
                     Category
                   </label>
                   <select
@@ -736,7 +736,7 @@ export default function GoalsView({
                   </select>
                 </div>
                 <div>
-                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
                     Target Deadline
                   </label>
                   <input
@@ -752,7 +752,7 @@ export default function GoalsView({
                 <button
                   type="button"
                   onClick={() => setIsAddAuxOpen(false)}
-                  className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800/50 text-sm font-sans font-medium text-gray-700 dark:text-gray-200 rounded-xl transition-colors"
+                  className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-sans font-medium text-gray-700 dark:text-gray-200 rounded-xl transition-colors"
                 >
                   Cancel
                 </button>

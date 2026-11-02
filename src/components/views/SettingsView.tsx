@@ -334,7 +334,7 @@ export default function SettingsView({
 
             <button
               onClick={handleResetClick}
-              className="w-full py-2 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:bg-red-900/40 border border-red-200 dark:border-red-800/30 text-xs font-sans text-red-600 dark:text-red-400 font-semibold rounded-[6px] flex items-center justify-center gap-1.5 transition-all"
+              className="w-full py-2 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 border border-red-200 dark:border-red-800/30 text-xs font-sans text-red-600 dark:text-red-400 font-semibold rounded-[6px] flex items-center justify-center gap-1.5 transition-all"
             >
               <RotateCcw size={12} /> RESTORE_SYSTEM_DEFAULTS
             </button>

@@ -174,7 +174,7 @@ export default function InvestmentsView({
       {/* 1. HEADER ROW */}
       <div className="flex justify-between items-center pb-4 border-b border-gray-200 dark:border-gray-800">
         <div>
-          <span className="font-sans text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium">
+          <span className="font-sans text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400 font-medium">
             Portfolio Monitor
           </span>
           <h1 className="font-sans font-semibold text-xl text-gray-900 dark:text-gray-50 mt-0.5 tracking-tight">
@@ -184,7 +184,7 @@ export default function InvestmentsView({
         <div className="flex gap-2">
           <button
             onClick={() => setIsLogSIPOpen(true)}
-            className="flex items-center gap-2 text-sm font-sans text-blue-600 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:bg-blue-900/40 font-medium px-4 py-2 rounded-xl transition-colors shadow-sm"
+            className="flex items-center gap-2 text-sm font-sans text-blue-600 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/40 font-medium px-4 py-2 rounded-xl transition-colors shadow-sm"
           >
             <Percent size={16} /> Execute SIP
           </button>
@@ -201,7 +201,7 @@ export default function InvestmentsView({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Total Cost Basis */}
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm p-5 rounded-2xl flex flex-col justify-between">
-          <span className="font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium">
+          <span className="font-sans text-xs text-gray-500 dark:text-gray-400 font-medium">
             Portfolio Cost Basis
           </span>
           <div className="mt-2 flex flex-col gap-1">
@@ -216,7 +216,7 @@ export default function InvestmentsView({
 
         {/* Current Market valuation */}
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm p-5 rounded-2xl flex flex-col justify-between">
-          <span className="font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium">
+          <span className="font-sans text-xs text-gray-500 dark:text-gray-400 font-medium">
             Current Market Valuation
           </span>
           <div className="mt-2 flex flex-col gap-1">
@@ -231,7 +231,7 @@ export default function InvestmentsView({
 
         {/* Absolute Performance Yield */}
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm p-5 rounded-2xl flex flex-col justify-between">
-          <span className="font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium">
+          <span className="font-sans text-xs text-gray-500 dark:text-gray-400 font-medium">
             Total Capital Gain / Yield
           </span>
           <div className="mt-2 flex flex-col gap-1">
@@ -248,11 +248,11 @@ export default function InvestmentsView({
 
       {/* 3. HOLDINGS GRID */}
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm rounded-2xl overflow-hidden">
-        <div className="p-5 border-b border-gray-100 dark:border-gray-800/50 bg-gray-50 dark:bg-gray-800/50/50 flex justify-between items-center">
+        <div className="p-5 border-b border-gray-100 dark:border-gray-800/50 bg-gray-50 dark:bg-gray-800/50 flex justify-between items-center">
           <h3 className="font-sans font-semibold text-sm text-gray-900 dark:text-gray-50 uppercase tracking-wide">
             Asset Holdings Ledger
           </h3>
-          <span className="font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium">
+          <span className="font-sans text-xs text-gray-500 dark:text-gray-400 font-medium">
             {holdings.length} active positions
           </span>
         </div>
@@ -260,7 +260,7 @@ export default function InvestmentsView({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-gray-100 dark:border-gray-800/50 text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400 dark:text-gray-500 font-sans bg-white dark:bg-gray-900">
+              <tr className="border-b border-gray-100 dark:border-gray-800/50 text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-sans bg-white dark:bg-gray-900">
                 <th className="py-3 px-5 font-semibold">Asset Instrument</th>
                 <th className="py-3 px-5 font-semibold">Category</th>
                 <th className="py-3 px-5 font-semibold text-right">Invested</th>
@@ -274,7 +274,7 @@ export default function InvestmentsView({
                 const gain = hold.currentValue - hold.investedAmount;
                 const gainPct = hold.investedAmount > 0 ? (gain / hold.investedAmount) * 100 : 0;
                 return (
-                  <tr key={hold.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800/50/50 transition-colors">
+                  <tr key={hold.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800/50 transition-colors">
                     <td className="py-4 px-5 text-gray-900 dark:text-gray-50 font-semibold">
                       <div>
                         {hold.name}
@@ -297,7 +297,7 @@ export default function InvestmentsView({
                         {hold.category}
                       </span>
                     </td>
-                    <td className="py-4 px-5 text-right text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium">
+                    <td className="py-4 px-5 text-right text-gray-500 dark:text-gray-400 font-medium">
                       ₹{hold.investedAmount.toLocaleString('en-IN')}
                     </td>
                     <td className="py-4 px-5 text-right text-gray-900 dark:text-gray-50 font-bold">
@@ -310,7 +310,7 @@ export default function InvestmentsView({
                     <td className="py-4 px-5 text-center">
                       <button
                         onClick={() => handleDeleteHolding(hold.id, hold.name, hold.currentValue)}
-                        className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:text-red-400 rounded-md hover:bg-gray-100 dark:bg-gray-800 transition-colors"
+                        className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                         title="Liquidate/Remove holding"
                       >
                         <Trash2 size={16} />
@@ -341,7 +341,7 @@ export default function InvestmentsView({
               <span className="font-sans text-sm text-gray-900 dark:text-gray-50 font-semibold tracking-wide">
                 Execute SIP Injection
               </span>
-              <button onClick={() => setIsLogSIPOpen(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:text-gray-50">
+              <button onClick={() => setIsLogSIPOpen(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-50">
                 <X size={18} />
               </button>
             </div>
@@ -351,7 +351,7 @@ export default function InvestmentsView({
                 This executes your recurring Index SIP allocation of <b className="text-blue-700 dark:text-blue-400 font-semibold">₹35,000</b>. It will increase the principal balance of mutual funds and debit from your monthly accounts.
               </div>
               <div>
-                <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
                   SIP Label Particular
                 </label>
                 <input
@@ -362,7 +362,7 @@ export default function InvestmentsView({
                 />
               </div>
               <div>
-                <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
                   Amount (₹)
                 </label>
                 <input
@@ -376,7 +376,7 @@ export default function InvestmentsView({
                 <button
                   type="button"
                   onClick={() => setIsLogSIPOpen(false)}
-                  className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800/50 text-sm font-sans font-medium text-gray-700 dark:text-gray-200 rounded-xl transition-colors"
+                  className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-sans font-medium text-gray-700 dark:text-gray-200 rounded-xl transition-colors"
                 >
                   Cancel
                 </button>
@@ -400,7 +400,7 @@ export default function InvestmentsView({
               <span className="font-sans text-sm text-gray-900 dark:text-gray-50 font-semibold tracking-wide">
                 Allocate Capital Desk
               </span>
-              <button onClick={() => setIsAddOpen(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:text-gray-50">
+              <button onClick={() => setIsAddOpen(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-50">
                 <X size={18} />
               </button>
             </div>
@@ -414,7 +414,7 @@ export default function InvestmentsView({
 
               {/* Asset Name */}
               <div>
-                <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
                   Asset Instrument / Stock / Fund Name
                 </label>
                 <input
@@ -428,7 +428,7 @@ export default function InvestmentsView({
 
               {/* Asset Class */}
               <div>
-                <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
                   Asset Class Classification
                 </label>
                 <select
@@ -447,7 +447,7 @@ export default function InvestmentsView({
               {/* Invested and Current value */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
                     Invested Amount (₹)
                   </label>
                   <input
@@ -459,7 +459,7 @@ export default function InvestmentsView({
                   />
                 </div>
                 <div>
-                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">
+                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">
                     Current Valuation (₹)
                   </label>
                   <input
@@ -473,7 +473,7 @@ export default function InvestmentsView({
               </div>
 
               {/* Help tip */}
-              <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 leading-relaxed italic">
+              <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed italic">
                 * Note: Registering an asset will automatically log a corresponding acquisition item under 'Investment' in your primary Ledger feed to balance your book flows.
               </p>
 
@@ -482,7 +482,7 @@ export default function InvestmentsView({
                 <button
                   type="button"
                   onClick={() => setIsAddOpen(false)}
-                  className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800/50 text-sm font-sans font-medium text-gray-700 dark:text-gray-200 rounded-xl transition-colors"
+                  className="px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-sans font-medium text-gray-700 dark:text-gray-200 rounded-xl transition-colors"
                 >
                   Cancel
                 </button>

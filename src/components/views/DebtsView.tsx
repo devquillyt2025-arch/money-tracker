@@ -202,7 +202,7 @@ export default function DebtsView({
     <div className="space-y-6">
       <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-gray-200 dark:border-gray-800 pb-4">
         <div>
-          <span className="font-sans text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium">
+          <span className="font-sans text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400 font-medium">
             Liabilities Monitor
           </span>
           <h1 className="font-sans font-semibold text-xl text-gray-900 dark:text-gray-50 mt-0.5 tracking-tight">
@@ -311,21 +311,21 @@ export default function DebtsView({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setHistoryDebtId(debt.id)}
-                    className="p-2.5 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 rounded-xl hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 dark:bg-blue-900/20 transition-colors"
+                    className="p-2.5 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 rounded-xl hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                     title="Payment History"
                   >
                     <ArrowRight size={18} />
                   </button>
                   <button
                     onClick={() => openEditModal(debt)}
-                    className="p-2.5 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-900/20 rounded-xl transition-colors"
+                    className="p-2.5 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-colors"
                     title="Edit"
                   >
                     <Edit2 size={18} />
                   </button>
                   <button
                     onClick={() => onDeleteDebt(debt.id)}
-                    className="p-2.5 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-900/20 rounded-xl transition-colors"
+                    className="p-2.5 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
                     title="Delete"
                   >
                     <Trash2 size={18} />
@@ -351,7 +351,7 @@ export default function DebtsView({
         )})}
         {debts.length === 0 && (
           <div className="text-center py-12 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-2xl bg-gray-50 dark:bg-gray-800/50">
-            <p className="text-gray-500 dark:text-gray-400 dark:text-gray-500 text-sm font-medium">No debts or loans tracked.</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">No debts or loans tracked.</p>
           </div>
         )}
       </div>
@@ -364,13 +364,13 @@ export default function DebtsView({
               <h3 className="text-lg font-sans font-semibold text-gray-900 dark:text-gray-50">
                 {editingDebtId ? 'Edit Debt' : 'Add New Debt'}
               </h3>
-              <button onClick={() => setIsAddOpen(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:text-gray-50">
+              <button onClick={() => setIsAddOpen(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-50">
                 <Plus size={20} className="rotate-45" />
               </button>
             </div>
             <form onSubmit={handleAddDebt} className="space-y-5">
               <div>
-                <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">Debt Name</label>
+                <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Debt Name</label>
                 <input
                   type="text"
                   required
@@ -382,7 +382,7 @@ export default function DebtsView({
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">Type</label>
+                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Type</label>
                   <select
                     value={formType}
                     onChange={e => {
@@ -409,7 +409,7 @@ export default function DebtsView({
                   )}
                 </div>
                 <div>
-                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">Interest Rate (%)</label>
+                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Interest Rate (%)</label>
                   <input
                     type="number"
                     step="0.1"
@@ -423,7 +423,7 @@ export default function DebtsView({
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">Total Amount</label>
+                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Total Amount</label>
                   <input
                     type="number"
                     required
@@ -435,7 +435,7 @@ export default function DebtsView({
                   />
                 </div>
                 <div>
-                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">Remaining Amount</label>
+                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Remaining Amount</label>
                   <input
                     type="number"
                     required
@@ -449,7 +449,7 @@ export default function DebtsView({
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">Monthly EMI (Optional)</label>
+                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Monthly EMI (Optional)</label>
                   <input
                     type="number"
                     min="0"
@@ -460,7 +460,7 @@ export default function DebtsView({
                   />
                 </div>
                 <div>
-                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500 font-medium mb-1.5">Start Date</label>
+                  <label className="block font-sans text-xs text-gray-500 dark:text-gray-400 font-medium mb-1.5">Start Date</label>
                   <input
                     type="date"
                     value={formStartDate}
@@ -478,7 +478,7 @@ export default function DebtsView({
                 <button
                   type="button"
                   onClick={() => setIsAddOpen(false)}
-                  className="flex-1 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800/50 rounded-xl font-sans font-medium text-sm text-gray-700 dark:text-gray-200 transition-colors"
+                  className="flex-1 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl font-sans font-medium text-sm text-gray-700 dark:text-gray-200 transition-colors"
                 >
                   Cancel
                 </button>
@@ -502,7 +502,7 @@ export default function DebtsView({
               <h3 className="text-lg font-sans font-semibold text-gray-900 dark:text-gray-50">
                 Payment History
               </h3>
-              <button onClick={() => setHistoryDebtId(null)} className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:text-gray-50">
+              <button onClick={() => setHistoryDebtId(null)} className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-50">
                 <Plus size={20} className="rotate-45" />
               </button>
             </div>
