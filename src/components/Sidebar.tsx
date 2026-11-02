@@ -60,15 +60,16 @@ export default function Sidebar({
                 key={item.id}
                 id={`nav-${item.id}`}
                 onClick={() => handleTabClick(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2 text-sm rounded-xl transition-all duration-150 text-left font-sans ${
-                  isActive 
-                    ? 'bg-white dark:bg-gray-900 text-blue-600 font-semibold shadow-sm border border-gray-100 dark:border-gray-800/50' 
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50 hover:bg-gray-200/50 border border-transparent'
+                aria-current={isActive ? 'page' : undefined}
+                className={`group w-full flex items-center gap-3 px-3 py-2 text-sm rounded-xl transition-all duration-150 text-left font-sans ${
+                  isActive
+                    ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 font-semibold shadow-sm border border-gray-100 dark:border-gray-800/50'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50 hover:bg-gray-200/50 dark:hover:bg-gray-800/60 border border-transparent'
                 }`}
               >
-                <Icon 
-                  size={16} 
-                  className={`transition-colors ${isActive ? 'text-blue-600' : 'text-gray-400 dark:text-gray-500'}`} 
+                <Icon
+                  size={16}
+                  className={`transition-colors ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-50'}`}
                 />
                 <span className="flex-1 truncate">{item.label}</span>
               </button>
@@ -86,7 +87,7 @@ export default function Sidebar({
       {/* Mobile Backdrop */}
       {isMobileOpen && (
         <div 
-          className="fixed inset-0 bg-gray-900/20 dark:bg-black/40 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setIsMobileOpen(false)}
         />
       )}
@@ -109,7 +110,7 @@ export default function Sidebar({
               Ledger
             </span>
           </div>
-          <button 
+          <button aria-label="Close menu" 
             onClick={() => setIsMobileOpen(false)}
             className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50 lg:hidden"
           >
@@ -125,7 +126,7 @@ export default function Sidebar({
         </nav>
 
         {/* Footer info */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-[#F4F5F7] dark:bg-gray-950 text-[11px] text-gray-400 dark:text-gray-500 flex flex-col gap-1 font-medium">
+        <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-[#F4F5F7] dark:bg-gray-950 text-[11px] text-gray-500 dark:text-gray-400 flex flex-col gap-1 font-medium">
           <div className="flex justify-between items-center">
             <span>System Status</span>
             <span className="text-green-600 dark:text-green-400 flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-green-600"></div> Nominal</span>

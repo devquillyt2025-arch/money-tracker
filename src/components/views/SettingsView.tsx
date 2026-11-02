@@ -162,7 +162,7 @@ export default function SettingsView({
         <div className="xl:col-span-8 space-y-6">
           
           {/* A. User Profile Name & Theme Toggle */}
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-[8px] space-y-6">
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-[8px] space-y-6">
             <div>
               <h3 className="font-sans font-medium text-xs text-gray-900 dark:text-gray-50 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700/40 pb-2 flex items-center gap-2">
                 <User size={13} className="text-blue-600 dark:text-blue-400" /> Profile Configuration
@@ -177,7 +177,7 @@ export default function SettingsView({
                     type="text"
                     value={profileName}
                     onChange={(e) => setProfileName(e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 focus:border-[#E0BD7D] rounded-[6px] text-xs text-gray-900 dark:text-gray-50 outline-none transition-colors"
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 focus:border-[#E0BD7D] rounded-[6px] text-xs text-gray-900 dark:text-gray-50 outline-none transition-colors"
                   />
                 </div>
                 <button
@@ -213,7 +213,7 @@ export default function SettingsView({
                         const val = parseInt(e.target.value) || 0;
                         setLocalBudgets({ ...localBudgets, [cat]: val });
                       }}
-                      className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 focus:border-[#E0BD7D] rounded-[6px] text-xs text-gray-900 dark:text-gray-50 outline-none transition-colors"
+                      className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 focus:border-[#E0BD7D] rounded-[6px] text-xs text-gray-900 dark:text-gray-50 outline-none transition-colors"
                       placeholder="e.g. 10000"
                     />
                   </div>
@@ -270,7 +270,7 @@ export default function SettingsView({
         <div className="xl:col-span-4 space-y-6">
           
           {/* A. Ledger Backup & Restore */}
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-[8px] space-y-4">
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-[8px] space-y-4">
             <h3 className="font-sans font-medium text-xs text-gray-900 dark:text-gray-50 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700/40 pb-2 flex items-center gap-2">
               <Download size={13} className="text-blue-600 dark:text-blue-400" /> Ledger Data Backups
             </h3>
@@ -329,7 +329,7 @@ export default function SettingsView({
             </h3>
             
             <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-relaxed">
-              Resetting will clear the local client database cache. All user custom ledger configurations and transactions will be wiped forever.
+              Resetting would permanently delete all of your ledger data. It is disabled while cloud sync is on, so nothing can be wiped by accident.
             </p>
 
             <button
@@ -340,10 +340,10 @@ export default function SettingsView({
             </button>
           </div>
 
-          <div className="p-3 bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 rounded-[8px] text-[10px] text-gray-500 dark:text-gray-500 leading-relaxed flex gap-2 font-sans">
+          <div className="p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-[8px] text-[10px] text-gray-500 dark:text-gray-400 leading-relaxed flex gap-2 font-sans">
             <Info size={14} className="shrink-0 text-gray-500 dark:text-gray-400 mt-0.5" />
             <p>
-              Data is stored fully inside the client's local storage sandbox. No remote server tracking, cookies, or telemetry is active. Securely offline.
+              Your data is stored in your private Neon Postgres database and synced across your devices. Sign-in is handled by Neon Auth.
             </p>
           </div>
 

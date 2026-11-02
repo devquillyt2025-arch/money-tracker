@@ -384,13 +384,13 @@ export default function GoalsView({
                         className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors ${
                           isReached 
                             ? 'bg-blue-600 text-white shadow-sm' 
-                            : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-gray-700'
+                            : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700'
                         }`}
                       >
                         {isReached ? <Check size={12} strokeWidth={3} /> : `${milestone}%`}
                       </div>
                       <span className={`text-[10px] font-medium mt-1.5 uppercase tracking-wider ${
-                        isReached ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'
+                        isReached ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'
                       }`}>
                         ₹{Math.round(primaryGoal.targetAmount * (milestone / 100)).toLocaleString('en-IN')}
                       </span>
@@ -463,10 +463,9 @@ export default function GoalsView({
                       Deposit
                     </button>
                     <span className="text-gray-200 dark:text-gray-700">|</span>
-                    <button
+                    <button aria-label={`Delete ${g.name}`} title={`Delete ${g.name}`}
                       onClick={() => handleDeleteAux(g.id)}
-                      className="text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                      title="Delete goal"
+                      className="text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -509,13 +508,13 @@ export default function GoalsView({
 
       {/* EDIT PRIMARY MODAL */}
       {isEditPrimaryOpen && (
-        <div className="fixed inset-0 bg-gray-900/20 dark:bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 w-full max-w-sm rounded-2xl overflow-hidden shadow-xl">
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800/50 px-5 py-4">
               <span className="font-sans text-sm text-gray-900 dark:text-gray-50 font-semibold tracking-wide">
                 Edit Primary Target
               </span>
-              <button onClick={() => setIsEditPrimaryOpen(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-50 transition-colors">
+              <button aria-label="Close" onClick={() => setIsEditPrimaryOpen(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50 transition-colors">
                 <X size={18} />
               </button>
             </div>
@@ -588,13 +587,13 @@ export default function GoalsView({
 
       {/* CONTRIBUTE CAPITAL MODAL */}
       {isContribOpen && (
-        <div className="fixed inset-0 bg-gray-900/20 dark:bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 w-full max-w-sm rounded-2xl overflow-hidden shadow-xl">
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800/50 px-5 py-4">
               <span className="font-sans text-sm text-gray-900 dark:text-gray-50 font-semibold tracking-wide">
                 Contribute to Goal
               </span>
-              <button onClick={() => setIsContribOpen(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-50 transition-colors">
+              <button aria-label="Close" onClick={() => setIsContribOpen(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50 transition-colors">
                 <X size={18} />
               </button>
             </div>
@@ -661,13 +660,13 @@ export default function GoalsView({
 
       {/* INITIALIZE AUXILIARY GOAL MODAL */}
       {isAddAuxOpen && (
-        <div className="fixed inset-0 bg-gray-900/20 dark:bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 w-full max-w-md rounded-2xl overflow-hidden shadow-xl">
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800/50 px-5 py-4">
               <span className="font-sans text-sm text-gray-900 dark:text-gray-50 font-semibold tracking-wide">
                 {editingAuxId ? 'Edit Auxiliary Goal' : 'Initialize Auxiliary Goal'}
               </span>
-              <button onClick={() => setIsAddAuxOpen(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-50 transition-colors">
+              <button aria-label="Close" onClick={() => setIsAddAuxOpen(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50 transition-colors">
                 <X size={18} />
               </button>
             </div>

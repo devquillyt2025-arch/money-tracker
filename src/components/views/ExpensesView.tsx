@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Entry, EntryType } from '../../types';
 import { DEFAULT_CATEGORIES } from '../../initialData';
 import { 
@@ -28,6 +28,16 @@ interface ExpensesViewProps {
 type SortField = 'date' | 'amount' | 'name' | 'category';
 type SortOrder = 'asc' | 'desc';
 
+// Rows rendered per "page"; rendering hundreds of rows at once makes the tab slow.
+const PAGE_SIZE = 50;
+
+// "2026-09-26" -> "26 Sept 2026"; built from parts so the day can't shift with the timezone.
+const formatShortDate = (iso: string) => {
+  const [y, m, d] = iso.split('-').map(Number);
+  if (!y || !m || !d) return iso;
+  return new Date(y, m - 1, d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+};
+
 export default function ExpensesView({
   entries,
   onAddEntry,
@@ -44,6 +54,12 @@ export default function ExpensesView({
   
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  // A new query starts from the first page; edits to a row keep the current page.
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [searchTerm, selectedCategory, selectedType, sortField, sortOrder]);
 
   // Edit states
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
@@ -93,6 +109,7 @@ export default function ExpensesView({
 
     return sortOrder === 'desc' ? -comparison : comparison;
   });
+  const visibleEntries = sortedEntries.slice(0, visibleCount);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -240,7 +257,7 @@ export default function ExpensesView({
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm rounded-2xl">
         {/* Search Input */}
         <div className="relative md:col-span-2">
-          <Search size={16} className="absolute left-3 top-2.5 text-gray-400 dark:text-gray-500" />
+          <Search size={16} className="absolute left-3 top-2.5 text-gray-500 dark:text-gray-400" />
           <input
             type="text"
             placeholder="Search particular or category..."
@@ -282,7 +299,51 @@ export default function ExpensesView({
 
       {/* 3. CORE TABLE CARD */}
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Phones: a compact list so the amount and actions are always visible. */}
+        <ul className="md:hidden divide-y divide-gray-100 dark:divide-gray-800">
+          {visibleEntries.map((entry) => {
+            const isIncome = entry.type === 'income';
+            return (
+              <li key={entry.id} className="flex items-center gap-2 pl-4 pr-1 py-2.5">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-50 truncate">{entry.name}</p>
+                  {/* Date first so a long category name truncates instead of the date. */}
+                  <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400 truncate">
+                    {formatShortDate(entry.date)} · {entry.category}
+                  </p>
+                </div>
+                <span className={`text-sm font-semibold whitespace-nowrap ${
+                  isIncome ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-gray-50'
+                }`}>
+                  {isIncome ? '+' : '-'}₹{entry.amount.toLocaleString('en-IN')}
+                </span>
+                <div className="flex items-center">
+                  <button
+                    aria-label={`Edit ${entry.name}`}
+                    onClick={() => startEdit(entry)}
+                    className="min-w-11 min-h-11 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-blue-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <Edit3 size={16} />
+                  </button>
+                  <button
+                    aria-label={`Delete ${entry.name}`}
+                    onClick={() => onDeleteEntry(entry.id)}
+                    className="min-w-11 min-h-11 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+          {sortedEntries.length === 0 && (
+            <li className="py-8 text-center text-sm text-gray-500 dark:text-gray-400 italic">
+              No records found matching filters.
+            </li>
+          )}
+        </ul>
+
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-800 text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-sans bg-gray-50 dark:bg-gray-800/50">
@@ -333,11 +394,11 @@ export default function ExpensesView({
                 <th className="py-3 px-5 text-center font-semibold max-w-[80px]">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
-              {sortedEntries.map((entry) => {
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              {visibleEntries.map((entry) => {
                 const isIncome = entry.type === 'income';
                 return (
-                  <tr key={entry.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800/50 transition-colors">
+                  <tr key={entry.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                     <td className="py-3 px-5 text-sm text-gray-900 dark:text-gray-50 font-medium max-w-[200px] truncate">
                       {entry.name}
                     </td>
@@ -346,7 +407,7 @@ export default function ExpensesView({
                         {entry.category}
                       </span>
                     </td>
-                    <td className="py-3 px-5 text-xs text-gray-400 dark:text-gray-500 font-sans">
+                    <td className="py-3 px-5 text-xs text-gray-500 dark:text-gray-400 font-sans">
                       {entry.date}
                     </td>
                     <td className={`py-3 px-5 text-sm font-semibold text-right ${
@@ -356,17 +417,15 @@ export default function ExpensesView({
                     </td>
                     <td className="py-3 px-5 text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <button
+                        <button aria-label={`Edit ${entry.name}`} title={`Edit ${entry.name}`}
                           onClick={() => startEdit(entry)}
-                          className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-blue-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                          title="Edit transaction entry"
+                          className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                         >
                           <Edit3 size={14} />
                         </button>
-                        <button
+                        <button aria-label={`Delete ${entry.name}`} title={`Delete ${entry.name}`}
                           onClick={() => onDeleteEntry(entry.id)}
-                          className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                          title="Delete transaction entry"
+                          className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -377,7 +436,7 @@ export default function ExpensesView({
               })}
               {sortedEntries.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-sm text-gray-400 dark:text-gray-500 italic">
+                  <td colSpan={5} className="py-8 text-center text-sm text-gray-500 dark:text-gray-400 italic">
                     No records found matching filters.
                   </td>
                 </tr>
@@ -385,8 +444,18 @@ export default function ExpensesView({
             </tbody>
           </table>
         </div>
+        {visibleEntries.length < sortedEntries.length && (
+          <div className="p-3 border-t border-gray-100 dark:border-gray-800 flex justify-center">
+            <button
+              onClick={() => setVisibleCount(count => count + PAGE_SIZE)}
+              className="min-h-11 px-4 text-sm font-medium text-blue-600 dark:text-blue-400 border border-gray-200 dark:border-gray-800 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              Show {Math.min(PAGE_SIZE, sortedEntries.length - visibleEntries.length)} more
+            </button>
+          </div>
+        )}
         <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 flex justify-between items-center text-xs font-sans text-gray-500 dark:text-gray-400 font-medium">
-          <span>Total Query Match: {sortedEntries.length} records</span>
+          <span>Showing {visibleEntries.length} of {sortedEntries.length} records</span>
           <span>Cloud Sync Active</span>
         </div>
       </div>
@@ -395,15 +464,15 @@ export default function ExpensesView({
       
       {/* ADD ENTRY MODAL */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 bg-gray-900/20 dark:bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 w-full max-w-md rounded-2xl overflow-hidden shadow-xl">
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800/50 px-5 py-4">
               <span className="font-sans text-sm text-gray-900 dark:text-gray-50 font-semibold tracking-wide">
                 Record New Flow
               </span>
-              <button 
+              <button aria-label="Close" 
                 onClick={() => setIsAddModalOpen(false)}
-                className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-50"
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50"
               >
                 <X size={18} />
               </button>
@@ -542,15 +611,15 @@ export default function ExpensesView({
 
       {/* EDIT ENTRY MODAL */}
       {editingEntry && (
-        <div className="fixed inset-0 bg-gray-900/20 dark:bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 w-full max-w-md rounded-2xl overflow-hidden shadow-xl">
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800/50 px-5 py-4">
               <span className="font-sans text-sm text-gray-900 dark:text-gray-50 font-semibold tracking-wide">
                 Edit Flow Record
               </span>
-              <button 
+              <button aria-label="Close" 
                 onClick={cancelEdit}
-                className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-50"
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50"
               >
                 <X size={18} />
               </button>

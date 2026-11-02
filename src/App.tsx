@@ -76,6 +76,28 @@ export default function App() {
     localStorage.removeItem('searchHistory');
   };
 
+  // Each tab starts at the top instead of inheriting the previous tab's scroll.
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [activeTab]);
+
+  // Escape closes the topmost open dialog via its own Close/Cancel control, so
+  // every view's dialog gets keyboard dismissal without its own listener.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      const dialogs = document.querySelectorAll<HTMLElement>('[role="dialog"]');
+      const top = dialogs[dialogs.length - 1];
+      if (!top) return;
+      const close =
+        top.querySelector<HTMLButtonElement>('button[aria-label="Close"]') ??
+        Array.from(top.querySelectorAll<HTMLButtonElement>('button')).find(b => b.textContent?.trim() === 'Cancel');
+      close?.click();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     return (localStorage.getItem('theme') as 'light' | 'dark') || 'light';
   });
@@ -230,6 +252,8 @@ export default function App() {
   };
 
   const handleDeleteEntry = async (id: string) => {
+    const entry = entries.find(e => e.id === id);
+    if (!window.confirm(`Delete "${entry?.name ?? 'this entry'}"${entry ? ` (₹${entry.amount.toLocaleString('en-IN')})` : ''}? This can't be undone.`)) return;
     try {
       await api.deleteEntry(id);
       setEntries(prev => prev.filter(e => e.id !== id));
@@ -268,6 +292,8 @@ export default function App() {
   };
 
   const handleDeleteBill = async (id: string) => {
+    const bill = bills.find(b => b.id === id);
+    if (!window.confirm(`Delete the "${bill?.name ?? 'selected'}" subscription? This can't be undone.`)) return;
     try {
       await api.deleteBill(id);
       setBills(prev => prev.filter(b => b.id !== id));
@@ -295,9 +321,15 @@ export default function App() {
   };
 
   const handleDeleteDebt = async (id: string) => {
+    const debt = debts.find(d => d.id === id);
+    // The database removes the debt's payment history along with it.
+    const payments = paymentHistory.filter(p => p.debtId === id).length;
+    const paymentNote = payments > 0 ? ` and its ${payments} recorded payment${payments === 1 ? '' : 's'}` : '';
+    if (!window.confirm(`Delete "${debt?.name ?? 'this debt'}"${paymentNote}? This can't be undone.`)) return;
     try {
       await api.deleteDebt(id);
       setDebts(prev => prev.filter(d => d.id !== id));
+      setPaymentHistory(prev => prev.filter(p => p.debtId !== id));
     } catch (e) {
       console.error(e);
     }
@@ -354,6 +386,8 @@ export default function App() {
   };
 
   const handleDeleteAccount = async (id: string) => {
+    const account = accounts.find(a => a.id === id);
+    if (!window.confirm(`Delete the "${account?.name ?? 'selected'}" account? This can't be undone.`)) return;
     try {
       await api.deleteAccount(id);
       setAccounts(prev => prev.filter(a => a.id !== id));
@@ -455,7 +489,11 @@ export default function App() {
             userName={userName}
             categoryBudgets={categoryBudgets}
             onNavigateToTab={(tab) => setActiveTab(tab)}
-            onAddEntryClick={() => setIsAddModalOpen(true)}
+            onAddEntryClick={() => {
+              // The add-entry dialog lives in the Transactions view.
+              setActiveTab('transactions');
+              setIsAddModalOpen(true);
+            }}
             onToggleBillPaid={handleToggleBillPaid}
           />
         );
@@ -605,7 +643,7 @@ export default function App() {
       {/* Mobile Top Navbar (Floating HUD) */}
       <header className="print:hidden lg:hidden h-14 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex items-center justify-between px-4 sticky top-0 z-30 shrink-0">
         <div className="flex items-center gap-3">
-          <button 
+          <button aria-label="Open menu" 
             onClick={() => setIsMobileOpen(true)}
             className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50"
           >
@@ -624,7 +662,7 @@ export default function App() {
         {/* Global Search Header */}
         <header className="print:hidden h-16 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md sticky top-14 lg:top-0 z-20 flex items-center px-4 md:px-6 lg:px-8 shrink-0">
           <div className="relative w-full max-w-md">
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
             <input 
               type="text" 
               placeholder="Search entries, categories, or dates..." 
@@ -709,9 +747,11 @@ export default function App() {
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -5 }}
+              // Fade only: a transform here would make the views' `fixed` dialogs
+              // position against this container instead of the window.
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               transition={{ duration: 0.15, ease: 'easeOut' }}
               className="h-full"
             >

@@ -75,6 +75,7 @@ export default function DashboardView({
   }, [entries]);
 
   const [selectedMonth, setSelectedMonth] = useState<string>(availableMonths[0]);
+  const selectedMonthDate = new Date(parseInt(selectedMonth.split('-')[0]), parseInt(selectedMonth.split('-')[1]) - 1);
 
   // Net worth: sum of all income - expense + investments
   const totalIncome = entries
@@ -227,7 +228,7 @@ export default function DashboardView({
             <span>{getFormattedDate()}</span>
             <span className="text-[#6B6E73] ml-1">|</span>
             <Clock size={12} className="text-[#6B6E73]" />
-            <span>10:46 UTC-7</span>
+            <span>{new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
           </div>
         </div>
       </div>
@@ -312,7 +313,7 @@ export default function DashboardView({
         {/* Card 2: Monthly Spend */}
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm p-5 rounded-2xl flex flex-col justify-between min-h-[100px]">
           <span className="font-sans text-xs text-gray-500 dark:text-gray-400 font-medium">
-            Monthly Spend <span className="text-[10px] text-gray-400 dark:text-gray-500 font-normal">(Jun)</span>
+            Monthly Spend <span className="text-[10px] text-gray-500 dark:text-gray-400 font-normal">({selectedMonthDate.toLocaleString('default', { month: 'short' })})</span>
           </span>
           <div className="mt-2 flex flex-col gap-1">
             <span className="font-sans text-2xl font-bold text-gray-900 dark:text-gray-50">
@@ -375,13 +376,13 @@ export default function DashboardView({
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         {/* Left Chart: Monthly Expenses (7 cols) */}
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm p-5 rounded-2xl xl:col-span-7 flex flex-col justify-between">
-          <div className="flex justify-between items-center mb-4 border-b border-gray-100 dark:border-gray-800/50 pb-2">
+          <div className="flex flex-wrap justify-between items-center gap-x-4 gap-y-2 mb-4 border-b border-gray-100 dark:border-gray-800/50 pb-2">
             <h3 className="font-sans font-semibold text-sm text-gray-900 dark:text-gray-50 uppercase tracking-wide">
               Monthly Expenditure Trend (6M)
             </h3>
             <div className="flex gap-4 text-xs font-sans font-medium text-gray-500 dark:text-gray-400">
               <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 bg-gray-300 rounded-full" /> Past
+                <span className="w-2.5 h-2.5 bg-gray-300 dark:bg-gray-600 rounded-full" /> Past
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 bg-green-500 rounded-full" /> Compare
@@ -398,7 +399,7 @@ export default function DashboardView({
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm p-5 rounded-2xl xl:col-span-5 flex flex-col justify-between">
           <div className="flex justify-between items-center mb-4 border-b border-gray-100 dark:border-gray-800/50 pb-2">
             <h3 className="font-sans font-semibold text-sm text-gray-900 dark:text-gray-50 uppercase tracking-wide">
-              Category Distribution <span className="text-[10px] text-gray-400 dark:text-gray-500 font-normal lowercase">({new Date(parseInt(selectedMonth.split('-')[0]), parseInt(selectedMonth.split('-')[1]) - 1).toLocaleString('default', { month: 'short', year: 'numeric' })})</span>
+              Category Distribution <span className="text-[10px] text-gray-500 dark:text-gray-400 font-normal normal-case">({selectedMonthDate.toLocaleString('default', { month: 'short', year: 'numeric' })})</span>
             </h3>
           </div>
           <DonutChart categoryData={donutChartData} />
@@ -424,18 +425,18 @@ export default function DashboardView({
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-gray-800/50 text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-sans font-medium">
+                <tr className="border-b border-gray-100 dark:border-gray-800/50 text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-sans font-medium">
                   <th className="pb-2">Particular / Label</th>
                   <th className="pb-2">Category</th>
                   <th className="pb-2">Date</th>
                   <th className="pb-2 text-right">Amount</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {recentTransactions.map((entry) => {
                   const isIncome = entry.type === 'income';
                   return (
-                    <tr key={entry.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800/50 transition-colors">
+                    <tr key={entry.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                       <td className="py-3 text-sm text-gray-900 dark:text-gray-50 font-medium pr-2 max-w-[150px] truncate">
                         {entry.name}
                       </td>
@@ -444,7 +445,7 @@ export default function DashboardView({
                           {entry.category}
                         </span>
                       </td>
-                      <td className="py-3 text-[11px] text-gray-400 dark:text-gray-500 font-sans">
+                      <td className="py-3 text-[11px] text-gray-500 dark:text-gray-400 font-sans">
                         {entry.date}
                       </td>
                       <td className={`py-3 text-sm font-semibold text-right ${
@@ -457,7 +458,7 @@ export default function DashboardView({
                 })}
                 {recentTransactions.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="py-6 text-center text-sm text-gray-400 dark:text-gray-500 italic">
+                    <td colSpan={4} className="py-6 text-center text-sm text-gray-500 dark:text-gray-400 italic">
                       No transactions recorded.
                     </td>
                   </tr>

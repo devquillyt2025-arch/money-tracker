@@ -13,40 +13,12 @@ import {
   Calendar,
   Printer
 } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ScatterChart, Scatter, ZAxis } from 'recharts';
+import { LineChart, Line, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 interface AnalyticsViewProps {
   entries: Entry[];
   bills: Bill[];
 }
-
-const HeatmapShape = (props: any) => {
-  const { cx, cy, payload, maxDailyAmount } = props;
-  const amount = payload.amount || 0;
-  
-  // Calculate intensity based on amount vs max
-  const intensity = maxDailyAmount > 0 ? amount / maxDailyAmount : 0;
-  
-  let fill = '#374151'; // empty day color for dark mode (will override with opacity below)
-  let opacity = 0.1;
-  
-  if (amount > 0) {
-     fill = '#6FAE98'; // using our primary green shade
-     opacity = Math.max(0.2, intensity); 
-  }
-  
-  return (
-    <rect 
-      x={cx - 15} 
-      y={cy - 15} 
-      width={30} 
-      height={30} 
-      fill={fill} 
-      fillOpacity={opacity}
-      rx={4}
-    />
-  );
-};
 
 export default function AnalyticsView({ entries, bills = [] }: AnalyticsViewProps) {
   // Extract all unique months from entries
@@ -79,6 +51,9 @@ export default function AnalyticsView({ entries, bills = [] }: AnalyticsViewProp
     }
     return `${y}-${m.toString().padStart(2, '0')}`;
   }, [currentMonthPrefix]);
+
+  const monthName = (prefix: string, options: Intl.DateTimeFormatOptions = { month: 'long' }) =>
+    new Date(parseInt(prefix.split('-')[0]), parseInt(prefix.split('-')[1]) - 1).toLocaleString('default', options);
   
   const totalBillsAmount = bills.reduce((sum, b) => sum + (b.amount || 0), 0);
 
@@ -276,25 +251,15 @@ export default function AnalyticsView({ entries, bills = [] }: AnalyticsViewProp
   });
 
   const heatmapData = [];
-  let currentWeek = 0;
   let maxDailyAmount = 0;
   for (let i = 1; i <= daysInCurrentMonth; i++) {
-    const dateStr = `${currentMonthPrefix}-${i.toString().padStart(2, '0')}`;
-    const dayOfWeek = (firstDayOfWeek + i - 1) % 7;
     const amount = dailySpending[i] || 0;
     if (amount > maxDailyAmount) maxDailyAmount = amount;
-    
     heatmapData.push({
       day: i,
-      x: dayOfWeek,
-      y: currentWeek, // We will reverse Y axis so week 0 is at top
       amount: amount,
-      date: dateStr,
+      date: `${currentMonthPrefix}-${i.toString().padStart(2, '0')}`,
     });
-    
-    if (dayOfWeek === 6) {
-      currentWeek++;
-    }
   }
 
   // 7. Trend of Income vs. Expenses (Last 6 months)
@@ -336,7 +301,9 @@ export default function AnalyticsView({ entries, bills = [] }: AnalyticsViewProp
       case 'Travel': return '#D08077'; // Terracotta
       case 'Bills & Subscription': return '#8B8680'; // Muted
       case 'Investment': return '#A8895A'; // Gold/Brown
-      default: return '#3A3E46'; // Grey
+      case 'Debt Repayment': return '#7C8FD6'; // Periwinkle
+      // Mid grey so uncategorised bars and dots stay visible on light and dark cards.
+      default: return '#9CA3AF';
     }
   };
 
@@ -408,7 +375,7 @@ export default function AnalyticsView({ entries, bills = [] }: AnalyticsViewProp
         {/* Net Cashflow positive index */}
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 rounded-2xl shadow-sm">
           <span className="font-sans text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider block font-medium">
-            Cashflow Gain (June)
+            Cashflow Gain ({monthName(currentMonthPrefix)})
           </span>
           <span className={`font-sans text-2xl font-bold block mt-2 ${currentMonthSavings >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
             {currentMonthSavings >= 0 ? '+' : ''}₹{currentMonthSavings.toLocaleString('en-IN')}
@@ -519,7 +486,7 @@ export default function AnalyticsView({ entries, bills = [] }: AnalyticsViewProp
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6 rounded-2xl shadow-sm">
         <div className="border-b border-gray-200 dark:border-gray-800 pb-3 mb-6 flex justify-between items-center">
           <h3 className="font-sans font-semibold text-sm text-gray-900 dark:text-gray-50 uppercase tracking-wide">
-            Monthly Burn Comparison: June vs May
+            Monthly Burn Comparison: {monthName(currentMonthPrefix)} vs {monthName(previousMonthPrefix)}
           </h3>
         </div>
         <div className="h-[300px] w-full">
@@ -629,52 +596,43 @@ export default function AnalyticsView({ entries, bills = [] }: AnalyticsViewProp
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6 rounded-2xl shadow-sm">
           <div className="border-b border-gray-200 dark:border-gray-800 pb-3 mb-6 flex justify-between items-center">
             <h3 className="font-sans font-semibold text-sm text-gray-900 dark:text-gray-50 uppercase tracking-wide">
-              Daily Spending Intensity (Current Month)
+              Daily Spending Intensity ({monthName(currentMonthPrefix, { month: 'short', year: 'numeric' })})
             </h3>
           </div>
-          <div className="h-[300px] w-full relative">
-            <ResponsiveContainer width="100%" height="100%">
-              <ScatterChart
-                margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-              >
-                <XAxis 
-                  type="category" 
-                  dataKey="x" 
-                  name="Day" 
-                  tickFormatter={(val) => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][val]} 
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fill: '#6B7280', fontSize: 12, fontFamily: 'Inter' }}
-                />
-                <YAxis 
-                  type="category" 
-                  dataKey="y" 
-                  name="Week" 
-                  reversed
-                  tick={false}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <ZAxis type="number" dataKey="amount" range={[100, 100]} />
-                <Tooltip 
-                  cursor={{ strokeDasharray: '3 3', stroke: '#374151', opacity: 0.2 }}
-                  contentStyle={{ 
-                    backgroundColor: 'rgba(17, 24, 39, 0.9)', 
-                    border: '1px solid #374151',
-                    borderRadius: '8px',
-                    fontFamily: 'Inter',
-                    fontSize: '12px'
-                  }}
-                  itemStyle={{ color: '#F9FAFB' }}
-                  formatter={(value: number, name: string, props: any) => [`₹${value.toLocaleString('en-IN')}`, 'Spent']}
-                  labelFormatter={(label: any, payload: any[]) => payload[0]?.payload?.date || 'Date'}
-                />
-                <Scatter 
-                  data={heatmapData} 
-                  shape={<HeatmapShape maxDailyAmount={maxDailyAmount} />} 
-                />
-              </ScatterChart>
-            </ResponsiveContainer>
+          {/* Calendar grid: one square per day, shaded by that day's spend relative to the busiest day. */}
+          <div className="w-full max-w-md mx-auto">
+            <div className="grid grid-cols-7 gap-1.5 mb-1.5">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
+                <div key={d} className="text-center text-xs font-medium text-gray-500 dark:text-gray-400">{d}</div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-1.5">
+              {Array.from({ length: firstDayOfWeek }, (_, i) => <div key={`pad-${i}`} />)}
+              {heatmapData.map(d => {
+                const intensity = maxDailyAmount > 0 ? d.amount / maxDailyAmount : 0;
+                return (
+                  <div
+                    key={d.day}
+                    title={`${d.date}: ₹${d.amount.toLocaleString('en-IN')} spent`}
+                    className={`aspect-square rounded-md flex items-center justify-center text-[11px] font-medium ${
+                      d.amount === 0
+                        ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                        : intensity >= 0.6 ? 'text-gray-900' : 'text-gray-700 dark:text-gray-200'
+                    }`}
+                    style={d.amount > 0 ? { backgroundColor: `rgba(111, 174, 152, ${Math.max(0.25, intensity)})` } : undefined}
+                  >
+                    {d.day}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex items-center justify-end gap-1.5 mt-3 text-[11px] text-gray-500 dark:text-gray-400">
+              Less
+              {[0.25, 0.5, 0.75, 1].map(o => (
+                <span key={o} className="w-3 h-3 rounded-sm" style={{ backgroundColor: `rgba(111, 174, 152, ${o})` }} />
+              ))}
+              More
+            </div>
           </div>
         </div>
       </div>

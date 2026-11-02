@@ -20,6 +20,40 @@ body {
   color: #f9fafb; /* gray-50 */
 }
 
+/* Tell the browser which theme is active so native controls (date-picker icons,
+   dropdown lists, scrollbars, autofill) render light or dark to match. */
+:root { color-scheme: light; }
+:root.dark { color-scheme: dark; }
+
+/* Money reads best with equal-width digits: columns line up and totals don't
+   shift width as values change. */
+body { font-variant-numeric: tabular-nums; }
+/* ...but not inside form controls, where it spreads out date separators and hyphens. */
+input, select, textarea, button { font-variant-numeric: normal; }
+
+/* Tailwind v4 no longer gives buttons a pointer cursor; restore it for anything
+   clickable. */
+button:not(:disabled), [role="button"], select, label[for], input[type="checkbox"], input[type="radio"] {
+  cursor: pointer;
+}
+
+/* Visible focus ring for keyboard users only (mouse clicks don't show it). These
+   rules are unlayered, so they win over `outline-none` on buttons and links. */
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible, summary:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Respect the OS "reduce motion" setting for CSS transitions and animations. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Custom scrollbars for a sleek terminal feel */
 ::-webkit-scrollbar {
   width: 6px;

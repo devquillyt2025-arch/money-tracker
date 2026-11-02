@@ -295,7 +295,7 @@ export default function BillsView({ bills, onAddBill, onUpdateBill, onDeleteBill
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button
+                  <button aria-label={bill.paid ? `Mark ${bill.name} unpaid` : `Mark ${bill.name} paid`} title={bill.paid ? `Mark ${bill.name} unpaid` : `Mark ${bill.name} paid`} aria-pressed={bill.paid}
                     onClick={() => onUpdateBill(bill.id, { paid: !bill.paid })}
                     className={`p-1.5 rounded-lg transition-colors ${bill.paid ? 'text-green-600 bg-green-50 dark:bg-green-900/20' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
                   >
@@ -308,17 +308,15 @@ export default function BillsView({ bills, onAddBill, onUpdateBill, onDeleteBill
                   ₹{(bill.amount || 0).toLocaleString('en-IN')}
                 </span>
                 <div className="flex gap-2">
-                  <button
+                  <button aria-label={`Edit ${bill.name}`} title={`Edit ${bill.name}`}
                     onClick={() => handleEditClick(bill)}
                     className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors bg-gray-50 dark:bg-gray-800/50 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl"
-                    title="Edit"
                   >
                     <Edit2 size={16} />
                   </button>
-                  <button
+                  <button aria-label={`Delete ${bill.name}`} title={`Delete ${bill.name}`}
                     onClick={() => onDeleteBill(bill.id)}
                     className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors bg-gray-50 dark:bg-gray-800/50 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl"
-                    title="Delete"
                   >
                     <Trash2 size={16} />
                   </button>

@@ -165,14 +165,14 @@ export default function InvestmentsView({
       case 'Mutual Fund': return '#6FAE98'; // Sage
       case 'Gold/Commodities': return '#A8895A'; // Bronze
       case 'Govt Debt': return '#8B8680'; // Muted
-      default: return '#3A3E46';
+      default: return '#9CA3AF'; // Mid grey, visible on light and dark cards
     }
   };
 
   return (
     <div className="space-y-6">
       {/* 1. HEADER ROW */}
-      <div className="flex justify-between items-center pb-4 border-b border-gray-200 dark:border-gray-800">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pb-4 border-b border-gray-200 dark:border-gray-800">
         <div>
           <span className="font-sans text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400 font-medium">
             Portfolio Monitor
@@ -184,13 +184,13 @@ export default function InvestmentsView({
         <div className="flex gap-2">
           <button
             onClick={() => setIsLogSIPOpen(true)}
-            className="flex items-center gap-2 text-sm font-sans text-blue-600 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/40 font-medium px-4 py-2 rounded-xl transition-colors shadow-sm"
+            className="flex-1 sm:flex-none justify-center whitespace-nowrap flex items-center gap-2 text-sm font-sans text-blue-600 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/40 font-medium px-4 py-2 rounded-xl transition-colors shadow-sm"
           >
             <Percent size={16} /> Execute SIP
           </button>
           <button
             onClick={() => setIsAddOpen(true)}
-            className="flex items-center gap-2 text-sm font-sans text-white bg-blue-600 hover:bg-blue-700 font-medium px-4 py-2 rounded-xl transition-colors shadow-sm"
+            className="flex-1 sm:flex-none justify-center whitespace-nowrap flex items-center gap-2 text-sm font-sans text-white bg-blue-600 hover:bg-blue-700 font-medium px-4 py-2 rounded-xl transition-colors shadow-sm"
           >
             <Plus size={16} /> Allocate Asset
           </button>
@@ -208,7 +208,7 @@ export default function InvestmentsView({
             <span className="font-sans text-2xl font-bold text-gray-900 dark:text-gray-50">
               ₹{totalInvested.toLocaleString('en-IN')}
             </span>
-            <div className="flex items-center gap-1.5 text-[10px] text-gray-400 dark:text-gray-500 font-sans font-medium uppercase tracking-wider mt-1">
+            <div className="flex items-center gap-1.5 text-[10px] text-gray-500 dark:text-gray-400 font-sans font-medium uppercase tracking-wider mt-1">
               <Briefcase size={12} /> Active Capital At Work
             </div>
           </div>
@@ -257,10 +257,16 @@ export default function InvestmentsView({
           </span>
         </div>
 
+        {holdings.length === 0 ? (
+          // Outside the table so it stays centred on screens narrower than the table.
+          <p className="py-10 px-5 text-center text-sm text-gray-500 dark:text-gray-400 italic">
+            No active assets registered. Allocate capital above.
+          </p>
+        ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-gray-100 dark:border-gray-800/50 text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-sans bg-white dark:bg-gray-900">
+              <tr className="border-b border-gray-100 dark:border-gray-800/50 text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-sans bg-white dark:bg-gray-900 whitespace-nowrap">
                 <th className="py-3 px-5 font-semibold">Asset Instrument</th>
                 <th className="py-3 px-5 font-semibold">Category</th>
                 <th className="py-3 px-5 font-semibold text-right">Invested</th>
@@ -269,17 +275,17 @@ export default function InvestmentsView({
                 <th className="py-3 px-5 font-semibold text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 font-sans text-sm">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800 font-sans text-sm">
               {holdings.map((hold) => {
                 const gain = hold.currentValue - hold.investedAmount;
                 const gainPct = hold.investedAmount > 0 ? (gain / hold.investedAmount) * 100 : 0;
                 return (
-                  <tr key={hold.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800/50 transition-colors">
+                  <tr key={hold.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                     <td className="py-4 px-5 text-gray-900 dark:text-gray-50 font-semibold">
                       <div>
                         {hold.name}
                         {hold.units && (
-                          <span className="block font-sans text-[10px] text-gray-400 dark:text-gray-500 font-normal mt-0.5">
+                          <span className="block font-sans text-[10px] text-gray-500 dark:text-gray-400 font-normal mt-0.5">
                             QTY: {hold.units} units
                           </span>
                         )}
@@ -308,10 +314,9 @@ export default function InvestmentsView({
                       <span className="text-[10px] opacity-80">{gainPct.toFixed(1)}%</span>
                     </td>
                     <td className="py-4 px-5 text-center">
-                      <button
+                      <button aria-label={`Delete ${hold.name}`} title={`Delete ${hold.name}`}
                         onClick={() => handleDeleteHolding(hold.id, hold.name, hold.currentValue)}
-                        className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                        title="Liquidate/Remove holding"
+                        className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -319,34 +324,28 @@ export default function InvestmentsView({
                   </tr>
                 );
               })}
-              {holdings.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-sm text-gray-400 dark:text-gray-500 italic">
-                    No active assets registered. Allocate capital above.
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
+        )}
       </div>
 
       {/* 4. MODALS */}
 
       {/* SIP MODAL */}
       {isLogSIPOpen && (
-        <div className="fixed inset-0 bg-gray-900/20 dark:bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 w-full max-w-sm rounded-2xl overflow-hidden shadow-xl">
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800/50 px-5 py-4">
               <span className="font-sans text-sm text-gray-900 dark:text-gray-50 font-semibold tracking-wide">
                 Execute SIP Injection
               </span>
-              <button onClick={() => setIsLogSIPOpen(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-50">
+              <button aria-label="Close" onClick={() => setIsLogSIPOpen(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50">
                 <X size={18} />
               </button>
             </div>
             <form onSubmit={handleLogSIP} className="p-5 space-y-5 font-sans">
-              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 text-blue-700 dark:text-blue-400 text-xs rounded-xl leading-relaxed">
+              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/50 text-blue-700 dark:text-blue-400 text-xs rounded-xl leading-relaxed">
                 <ShieldAlert size={16} className="inline mr-1 text-blue-600 mb-0.5" />
                 This executes your recurring Index SIP allocation of <b className="text-blue-700 dark:text-blue-400 font-semibold">₹35,000</b>. It will increase the principal balance of mutual funds and debit from your monthly accounts.
               </div>
@@ -394,13 +393,13 @@ export default function InvestmentsView({
 
       {/* ALLOCATE ASSET MODAL */}
       {isAddOpen && (
-        <div className="fixed inset-0 bg-gray-900/20 dark:bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 w-full max-w-md rounded-2xl overflow-hidden shadow-xl">
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800/50 px-5 py-4">
               <span className="font-sans text-sm text-gray-900 dark:text-gray-50 font-semibold tracking-wide">
                 Allocate Capital Desk
               </span>
-              <button onClick={() => setIsAddOpen(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-50">
+              <button aria-label="Close" onClick={() => setIsAddOpen(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50">
                 <X size={18} />
               </button>
             </div>

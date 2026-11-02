@@ -88,12 +88,13 @@ export default function AccountsView({
       percentage: (bal / totalPositiveBalance) * 100
     }));
 
+  // Mid-tone, mutually distinct colours that read on both the light and dark track.
   const segmentColors = [
-    'bg-blue-300 dark:bg-blue-800',
-    'bg-slate-300 dark:bg-slate-700',
-    'bg-gray-300 dark:bg-gray-700',
-    'bg-indigo-300 dark:bg-indigo-800',
-    'bg-sky-300 dark:bg-sky-800',
+    'bg-blue-500',
+    'bg-emerald-500',
+    'bg-amber-400',
+    'bg-violet-500',
+    'bg-rose-400',
   ];
 
   const openAddModal = () => {
@@ -197,10 +198,9 @@ export default function AccountsView({
         </div>
         <div className="flex items-center gap-2">
           <div className="relative" ref={filterRef}>
-            <button
+            <button aria-label="Sort and filter accounts" title="Sort and filter accounts" aria-expanded={isFilterOpen}
               onClick={() => setIsFilterOpen(!isFilterOpen)}
               className="p-2.5 rounded-xl border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              title="Sort and Filter"
             >
               <ListFilter size={18} />
             </button>
@@ -277,7 +277,7 @@ export default function AccountsView({
         </p>
         {netChangeThisMonth !== 0 && (
           <p className={`font-sans text-xs font-medium mt-2 ${netChangeThisMonth >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-            {netChangeThisMonth > 0 ? '+' : ''}₹{Math.abs(netChangeThisMonth).toLocaleString()} this month
+            {netChangeThisMonth > 0 ? '+' : '−'}₹{Math.abs(netChangeThisMonth).toLocaleString()} this month
           </p>
         )}
         
@@ -297,7 +297,7 @@ export default function AccountsView({
               {bankSegments.map((segment, idx) => (
                 <div key={segment.name} className="flex items-center gap-1.5">
                   <div className={`w-2 h-2 rounded-full ${segmentColors[idx % segmentColors.length]}`} />
-                  <span className="font-sans text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]">
+                  <span className="font-sans text-xs text-gray-500 dark:text-gray-400 truncate max-w-[220px]">
                     {segment.name} ({segment.percentage.toFixed(0)}%)
                   </span>
                 </div>
@@ -331,17 +331,15 @@ export default function AccountsView({
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <button
+                <button aria-label={`Edit ${account.name}`} title={`Edit ${account.name}`}
                   onClick={() => openEditModal(account)}
-                  className="p-2 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-colors"
-                  title="Edit"
+                  className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-colors"
                 >
                   <Edit2 size={16} />
                 </button>
-                <button
+                <button aria-label={`Delete ${account.name}`} title={`Delete ${account.name}`}
                   onClick={() => onDeleteAccount(account.id)}
-                  className="p-2 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
-                  title="Delete"
+                  className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
                 >
                   <Trash2 size={16} />
                 </button>
@@ -372,13 +370,13 @@ export default function AccountsView({
 
       {/* Add/Edit Modal */}
       {isAddOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/20 dark:bg-black/40 backdrop-blur-sm">
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm">
           <div className="w-full max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6 rounded-2xl shadow-xl">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-sans font-semibold text-gray-900 dark:text-gray-50">
                 {editingAccountId ? 'Edit Account' : 'Add New Account'}
               </h3>
-              <button onClick={() => setIsAddOpen(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-50">
+              <button aria-label="Close" onClick={() => setIsAddOpen(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50">
                 <Plus size={20} className="rotate-45" />
               </button>
             </div>

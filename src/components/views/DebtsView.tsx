@@ -86,7 +86,10 @@ export default function DebtsView({
 
   const handleMarkEmiPaid = (debt: Debt) => {
     if (!debt.emi || debt.remainingAmount <= 0) return;
-    
+    // One click records a payment, a transaction and a history row; confirm so a
+    // stray or double click can't log duplicate EMIs.
+    if (!window.confirm(`Record an EMI payment of ₹${Math.round(debt.emi).toLocaleString('en-IN')} for ${debt.name} today?`)) return;
+
     const newRemaining = Math.max(0, debt.remainingAmount - debt.emi);
     onUpdateDebt(debt.id, { remainingAmount: newRemaining });
     
@@ -309,24 +312,21 @@ export default function DebtsView({
                   </button>
                 )}
                 <div className="flex items-center gap-2">
-                  <button
+                  <button aria-label={`Payment history for ${debt.name}`} title={`Payment history for ${debt.name}`}
                     onClick={() => setHistoryDebtId(debt.id)}
                     className="p-2.5 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 rounded-xl hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-                    title="Payment History"
                   >
                     <ArrowRight size={18} />
                   </button>
-                  <button
+                  <button aria-label={`Edit ${debt.name}`} title={`Edit ${debt.name}`}
                     onClick={() => openEditModal(debt)}
-                    className="p-2.5 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-colors"
-                    title="Edit"
+                    className="p-2.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-colors"
                   >
                     <Edit2 size={18} />
                   </button>
-                  <button
+                  <button aria-label={`Delete ${debt.name}`} title={`Delete ${debt.name}`}
                     onClick={() => onDeleteDebt(debt.id)}
-                    className="p-2.5 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
-                    title="Delete"
+                    className="p-2.5 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
                   >
                     <Trash2 size={18} />
                   </button>
@@ -358,13 +358,13 @@ export default function DebtsView({
 
       {/* Add Modal */}
       {isAddOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/20 dark:bg-black/40 backdrop-blur-sm">
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm">
           <div className="w-full max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6 rounded-2xl shadow-xl">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-sans font-semibold text-gray-900 dark:text-gray-50">
                 {editingDebtId ? 'Edit Debt' : 'Add New Debt'}
               </h3>
-              <button onClick={() => setIsAddOpen(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-50">
+              <button aria-label="Close" onClick={() => setIsAddOpen(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50">
                 <Plus size={20} className="rotate-45" />
               </button>
             </div>
@@ -496,13 +496,13 @@ export default function DebtsView({
 
       {/* Payment History Modal */}
       {historyDebtId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/20 dark:bg-black/40 backdrop-blur-sm">
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm">
           <div className="w-full max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6 rounded-2xl shadow-xl">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-sans font-semibold text-gray-900 dark:text-gray-50">
                 Payment History
               </h3>
-              <button onClick={() => setHistoryDebtId(null)} className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-50">
+              <button aria-label="Close" onClick={() => setHistoryDebtId(null)} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50">
                 <Plus size={20} className="rotate-45" />
               </button>
             </div>

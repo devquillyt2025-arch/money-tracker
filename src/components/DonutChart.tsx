@@ -56,7 +56,7 @@ export default function DonutChart({ categoryData }: DonutChartProps) {
           name: 'Others',
           amount: othersAmount,
           percentage: (othersAmount / total) * 100,
-          color: '#e5e7eb' // gray-200
+          color: '#9ca3af' // gray-400: readable on light and dark cards
         }
       ].filter(s => s.amount > 0);
     }
@@ -86,13 +86,14 @@ export default function DonutChart({ categoryData }: DonutChartProps) {
                 cy="50"
                 r={radius}
                 fill="transparent"
-                stroke="#f3f4f6"
+                className="stroke-gray-100 dark:stroke-gray-800"
                 strokeWidth={strokeWidth}
               />
 
               {segments.map((seg, idx) => {
                 const strokeLength = (seg.percentage / 100) * circumference;
-                const strokeOffset = circumference - (accumulatedPercentage / 100) * circumference;
+                // Negative offset starts this segment where the previous one ended.
+                const strokeOffset = -(accumulatedPercentage / 100) * circumference;
                 accumulatedPercentage += seg.percentage;
 
                 const isHovered = hoveredIdx === idx;
@@ -169,7 +170,7 @@ export default function DonutChart({ categoryData }: DonutChartProps) {
                   </div>
                   <div className="flex items-center gap-3 font-sans text-sm">
                     <span className="font-semibold text-gray-900 dark:text-gray-50">₹{seg.amount.toLocaleString('en-IN')}</span>
-                    <span className="text-gray-400 dark:text-gray-500 text-xs w-8 text-right font-medium">
+                    <span className="text-gray-500 dark:text-gray-400 text-xs w-8 text-right font-medium">
                       {seg.percentage.toFixed(0)}%
                     </span>
                   </div>

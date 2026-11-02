@@ -44,10 +44,10 @@ export default function BarChart({ data, title }: BarChartProps) {
     return `₹${(value / 1000).toFixed(0)}k`;
   };
 
-  const getBarColor = (item: BarData) => {
-    if (item.isCurrent) return '#2563eb'; // blue-600
-    if (item.isComparison) return '#22c55e'; // green-500
-    return '#e5e7eb'; // gray-200
+  const getBarClass = (item: BarData) => {
+    if (item.isCurrent) return 'fill-blue-600';
+    if (item.isComparison) return 'fill-green-500';
+    return 'fill-gray-300 dark:fill-gray-600';
   };
 
   // 4 Y-axis labels
@@ -66,13 +66,13 @@ export default function BarChart({ data, title }: BarChartProps) {
                 y1={y}
                 x2={paddingLeft + chartWidth}
                 y2={y}
-                stroke="#f3f4f6" // gray-100
+                className="stroke-gray-100 dark:stroke-gray-800"
                 strokeWidth={1}
               />
               <text
                 x={paddingLeft - 10}
                 y={y + 3}
-                fill="#9ca3af" // gray-400
+                className="fill-gray-500 dark:fill-gray-400"
                 fontSize={10}
                 fontFamily="Inter, ui-sans-serif, system-ui"
                 fontWeight="500"
@@ -117,9 +117,8 @@ export default function BarChart({ data, title }: BarChartProps) {
                 y={y}
                 width={barWidth}
                 height={Math.max(1, barHeight)}
-                fill={getBarColor(item)}
                 rx={4}
-                className="transition-all duration-300"
+                className={`${getBarClass(item)} transition-all duration-300`}
                 style={{
                   fillOpacity: isHovered ? 1 : 0.85,
                 }}
@@ -144,12 +143,11 @@ export default function BarChart({ data, title }: BarChartProps) {
               <text
                 x={x + barWidth / 2}
                 y={height - 10}
-                fill={isHovered ? '#111827' : '#9ca3af'}
                 fontSize={10}
                 fontFamily="Inter, ui-sans-serif, system-ui"
                 fontWeight="600"
                 textAnchor="middle"
-                className="transition-colors duration-150"
+                className={`transition-colors duration-150 ${isHovered ? 'fill-gray-900 dark:fill-gray-50' : 'fill-gray-500 dark:fill-gray-400'}`}
               >
                 {item.month}
               </text>
@@ -163,7 +161,7 @@ export default function BarChart({ data, title }: BarChartProps) {
           y1={paddingTop + chartHeight}
           x2={paddingLeft + chartWidth}
           y2={paddingTop + chartHeight}
-          stroke="#f3f4f6"
+          className="stroke-gray-200 dark:stroke-gray-700"
           strokeWidth={1.5}
         />
       </svg>
@@ -180,7 +178,7 @@ export default function BarChart({ data, title }: BarChartProps) {
             top: `${Math.max(10, paddingTop)}px`,
           }}
         >
-          <div className="text-gray-400 dark:text-gray-500 text-[10px] uppercase font-bold tracking-wider mb-1">
+          <div className="text-gray-500 dark:text-gray-400 text-[10px] uppercase font-bold tracking-wider mb-1">
             {data[hoveredIndex].month} Spend
           </div>
           <div className="text-white font-bold text-sm">
